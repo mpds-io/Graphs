@@ -10,41 +10,8 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      
-      <div class="custom-file mt-1">
-        <input type="file" class="custom-file-input" id="customFile" accept="image/png" (change)="handleImageFileInput($event.target.files)" title="The source picture">
-        <label class="custom-file-label" for="customFile">Choose .png file</label>
-      </div>
-      <span class="mt-1"></span>
-      <div class="custom-file">
-        <input type="file" class="custom-file-input" id="customFile" accept=".json" (change)="handleJsonFileInput($event.target.files)" title="The result (saved earlier) for checking">
-        <label class="custom-file-label" for="customFile">Choose .json file</label>
-      </div>
 
-      <span class="mt-3"></span>
-      <div class="input-group">
-        <input class="form-control" [(ngModel)]="imageFileUrl" #imageUrl="ngModel" [ngModelOptions]="{standalone: true}"
-            [ngClass]="{'is-invalid':imageUrl.invalid}" placeholder=".png file url" title="The source picture"
-            pattern="(.+\.(?:png))" />
-        <span class="ml-2"></span>
-        <button class="btn btn-light" (click)="handleImageFileUrl(imageFileUrl)" [disabled]="!imageFileUrl || imageUrl.invalid">Load</button>
-        <div class="invalid-feedback">
-          Invalid image file url.
-        </div>
-      </div>
       <span class="mt-1"></span>
-      <div class="input-group">
-        <input class="form-control" [(ngModel)]="jsonFileUrl" #jsonUrl="ngModel" [ngModelOptions]="{standalone: true}"
-            [ngClass]="{'is-invalid':jsonUrl.invalid}" placeholder=".json file url" title="The result (saved earlier) for checking"
-            pattern="(.+\.(?:json))" />
-        <span class="ml-2"></span>
-        <button class="btn btn-light" (click)="handleJsonFileUrl(jsonFileUrl)" [disabled]="!jsonFileUrl || jsonUrl.invalid">Load</button>
-        <div class="invalid-feedback">
-          Invalid json file url.
-        </div>
-      </div>
-
-      <span class="mt-3"></span>
       <div>
         <textarea formControlName="graphName" class="form-control" placeholder="Graph name" [ngClass]="{'is-invalid':graphForm.get('graphName').invalid}" pattern="[\x00-\x7F]+"></textarea>
         <div class="invalid-feedback">
@@ -52,12 +19,12 @@
         </div>
       </div>
 
-      <span class="mt-3"></span>
+      <span class="mt-1"></span>
       <input formControlName="xAxisName" class="form-control" placeholder="X-axis name" required>
       <span class="mt-1"></span>
       <input formControlName="yAxisName" class="form-control" placeholder="Y-axis name" required>
-      
-      <span class="mt-5"></span>
+
+      <span class="mt-4"></span>
       <div class="input-group" formGroupName="originPoint">
           <button type="button" id="btn_origin" class="btn btn-warning" data-toggle="button" aria-pressed="false" (click)="toggleOrigin($event)" title="Double click at the graph">Set Origin</button>
           <span class="ml-1"></span>
@@ -71,7 +38,7 @@
       <span class="mt-3"></span>
       <button class="btn-primary" (click)="addXAxisPoint()">Add X-axis point</button>
       <div class="d-flex mt-1" *ngFor="let xAxisPoint of xAxisPoints?.controls; let i = index">
-        <x-axis-point class="d-flex flex-fill" [index]="i" [xAxisPointForm]="xAxisPoint" (deleteXAxisPoint)="deleteXAxisPoint($event)" 
+        <x-axis-point class="d-flex flex-fill" [index]="i" [xAxisPointForm]="xAxisPoint" (deleteXAxisPoint)="deleteXAxisPoint($event)"
         (toggleXAxisPointButton)="toggleXAxisPointButton($event,i)"></x-axis-point>
         <button class="btn-danger" *ngIf="i>0" (click)="deleteXAxisPoint(i)">Remove</button>
       </div>
@@ -79,13 +46,13 @@
       <span class="mt-3"></span>
       <button class="btn-primary" (click)="addYAxisPoint()">Add Y-axis point</button>
       <div class="d-flex mt-1" *ngFor="let yAxisPoint of yAxisPoints?.controls; let i = index">
-        <y-axis-point class="d-flex flex-fill" [index]="i" [yAxisPointForm]="yAxisPoint" (deleteYAxisPoint)="deleteYAxisPoint($event)" 
+        <y-axis-point class="d-flex flex-fill" [index]="i" [yAxisPointForm]="yAxisPoint" (deleteYAxisPoint)="deleteYAxisPoint($event)"
         (toggleYAxisPointButton)="toggleYAxisPointButton($event,i)"></y-axis-point>
         <button class="btn-danger" *ngIf="i>0" (click)="deleteYAxisPoint(i)">Remove</button>
       </div>
 
-      <span class="mt-5"></span>   
-      <button class="btn-primary" (click)="addSubgraph()">Add Subgraph</button>
+      <span class="mt-4"></span>
+      <button class="btn-primary" (click)="addSubgraph()">Add subgraph</button>
       <ngb-accordion #acc="ngbAccordion" class="d-flex flex-column" [closeOthers]="true" (panelChange)="toggleAccordian($event)">
           <ngb-panel cardClass="mt-1" class="d-flex" *ngFor="let subgraph of subgraphs?.controls; let i = index" id="{{i}}">
             <ng-template ngbPanelHeader let-opened="opened">
@@ -95,28 +62,25 @@
                 </div>
             </ng-template>
             <ng-template ngbPanelContent>
-                <subgraph class="d-flex" [index]="i" [subgraphForm]="subgraph" (deleteSubgraph)="deleteSubgraph($event)" 
+                <subgraph class="d-flex" [index]="i" [subgraphForm]="subgraph" (deleteSubgraph)="deleteSubgraph($event)"
                 (interpolationTypeChanged)="interpolationTypeChanged($event)"></subgraph>
             </ng-template>
           </ngb-panel>
-      </ngb-accordion> 
+      </ngb-accordion>
 
       <div class="d-flex pl-2 pr-2 mt-2">
         <div class="custom-control custom-checkbox d-flex ">
             <input type="checkbox" class="custom-control-input" id="viewAllSubgraphs" (change)="checkViewAllSubgraphs($event)">
-            <label class="custom-control-label" for="viewAllSubgraphs">View all subgraphs</label>                
+            <label class="custom-control-label" for="viewAllSubgraphs">View all subgraphs</label>
         </div>
       </div>
 
-      <span class="mt-5"></span>
-      <button type="submit" class="btn btn-light" (click)="saveGraphLocally()" [disabled]="graphForm.invalid" title="Save the result data to local machine">Save Locally</button>
-      
       <span class="mt-1"></span>
-      <button class="btn btn-light" (click)="saveGraphRemotely()" [disabled]="graphForm.invalid" title="Send result data to an endpoint from the config">Save Remotely</button>
-      
+      <button type="submit" class="btn btn-primary" (click)="saveGraphRemotely()" [disabled]="graphForm.invalid" title="Save result data on the server">Save graph</button>
+
       <span class="mt-1"></span>
-      <div>
-        <span>Parent Form Status: <span class="status">{{graphForm.status}}</span></span>
+      <div style="text-align: center">
+        <span>Graph status: <span class="status">{{graphForm.status}}</span></span>
       </div>
     </form>
   </div>
