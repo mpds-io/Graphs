@@ -3,9 +3,10 @@ ul {
 }
 
 .status {
+    font-weight: bold;
     color: green;
 }
-  
+
 .ng-invalid .status {
     color: red;
 }
@@ -16,8 +17,9 @@ ul {
     height: 700px;
     border: 1px solid black;
     margin-top: 5px;
-    outline: none; }
+    outline: none;
+}
 
 #graphForm {
-    max-height: 700px;
+    max-height: 750px;
 }

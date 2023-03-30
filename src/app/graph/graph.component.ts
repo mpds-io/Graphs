@@ -36,7 +36,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   imageFileUrl = "";
   jsonFileUrl = "";
-  
+
   error = '';
 
   viewAllSubgraphsActive: boolean = false;
@@ -68,7 +68,7 @@ export class GraphComponent implements OnInit, OnDestroy {
         this.xAxisPoints = this.graphForm.get('xAxisPoints') as UntypedFormArray
         this.yAxisPoints = this.graphForm.get('yAxisPoints') as UntypedFormArray
       });
-       
+
     const initialEditorState = <FunctionCurveEditor.EditorState>{
       knots:          [],
       xMin:           0,
@@ -83,7 +83,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.graphFormService.addSubgraph()
     this.graphFormService.addXAxisPoint()
     this.graphFormService.addYAxisPoint()
-   
+
     this.startup(initialEditorState);
 
     this.route.queryParams.subscribe(params => {
@@ -140,7 +140,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     const eState = this.widget.getEditorState();
     eState.xAxisPoints.splice(index,1);
     eState.axisPointIndex = 0;
-    this.widget.setEditorState(eState); 
+    this.widget.setEditorState(eState);
   }
 
   deleteYAxisPoint(index: number) {
@@ -149,7 +149,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     const eState = this.widget.getEditorState();
     eState.yAxisPoints.splice(index,1);
     eState.axisPointIndex = 0;
-    this.widget.setEditorState(eState); 
+    this.widget.setEditorState(eState);
   }
 
   handleImageFileInput(files: FileList) {
@@ -186,7 +186,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     const base64textString = btoa(binaryString);
     this.widget.setConnected(true);
     this.widget.setWidgetContextImage(base64textString, this.imageFileToUpload.type);
-    
+
     const length = this.graphFormService.getSubgraphsLength();
     if(this.currentActivePanelId == undefined
       && length == 1)
@@ -256,12 +256,12 @@ export class GraphComponent implements OnInit, OnDestroy {
 
     eState.xAxisPoints = [];
     for (let i = 0; i < calculatedGraph.xAxisPoints.length; i++) {
-      eState.xAxisPoints.push({x:calculatedGraph.xAxisPoints[i].xCoordinate, y:calculatedGraph.xAxisPoints[i].yCoordinate});    
+      eState.xAxisPoints.push({x:calculatedGraph.xAxisPoints[i].xCoordinate, y:calculatedGraph.xAxisPoints[i].yCoordinate});
     }
 
     eState.yAxisPoints = [];
     for (let i = 0; i < calculatedGraph.yAxisPoints.length; i++) {
-      eState.yAxisPoints.push({x:calculatedGraph.yAxisPoints[i].xCoordinate, y:calculatedGraph.yAxisPoints[i].yCoordinate});    
+      eState.yAxisPoints.push({x:calculatedGraph.yAxisPoints[i].xCoordinate, y:calculatedGraph.yAxisPoints[i].yCoordinate});
     }
 
     this.currentActivePanelId = 0;
@@ -279,7 +279,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       this.widget.setConnected(true);
     }
 
-    this.widget.setEditorState(eState);  
+    this.widget.setEditorState(eState);
   }
 
   checkViewAllSubgraphs(event: any)
@@ -297,12 +297,12 @@ export class GraphComponent implements OnInit, OnDestroy {
     const graphData = this.graphForm.value as Graph;
     eState.curvesState = this.graphFormService.getSubgraphsState(graphData.subgraphs);
     eState.viewAllOptionActive = this.viewAllSubgraphsActive;
-    this.widget.setEditorState(eState); 
+    this.widget.setEditorState(eState);
   }
 
   saveGraphLocally() {
     const data = this.getFixedCalculatedGraph();
-    const fileName = (this.imageFileToUpload ? this.imageFileToUpload.name.split('.')[0] : 'myfile') + '.json';   
+    const fileName = (this.imageFileToUpload ? this.imageFileToUpload.name.split('.')[0] : 'result') + '.json';
     this.jsonFileService.saveJsonFromGraphData(data, fileName);
   }
 
@@ -363,7 +363,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     const eState = this.widget.getEditorState();
     eState.axisButtonsState = this.pointButtonsState;
     eState.axisPointIndex = index;
-    this.widget.setEditorState(eState); 
+    this.widget.setEditorState(eState);
   }
 
   toggleYAxisPointButton(event: MouseEvent, index: number) {
@@ -379,7 +379,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     const eState = this.widget.getEditorState();
     eState.axisButtonsState = this.pointButtonsState;
     eState.axisPointIndex = index;
-    this.widget.setEditorState(eState); 
+    this.widget.setEditorState(eState);
   }
 
   togglePointButton() {
@@ -395,7 +395,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       this.currentActivePanelId = parseInt(props.panelId);
       this.widget.setConnected(true);
     }
-    
+
     if(props.nextState == false)
     {
       this.previousActivePanelId = this.currentActivePanelId;

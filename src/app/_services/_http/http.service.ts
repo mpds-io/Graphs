@@ -4,7 +4,7 @@ import { CalculatedGraphModel } from 'src/app/_models/_graph/calculated-graph-mo
 
 @Injectable()
 export class HttpService {
-  
+
   constructor(private http: HttpClient) { }
 
   public getFile(url: string) {
