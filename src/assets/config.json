@@ -1,3 +1,4 @@
 {
-    "postGraphDataUrl": "/upload"
+    "postGraphDataUrl": "/upload",
+    "redirectCutUrl": "/pageshow?redir=markup&entry="
 }

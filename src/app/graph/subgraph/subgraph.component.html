@@ -3,7 +3,7 @@
 
     <div class="input-group">
       <div class="input-group-prepend">
-        <label class="input-group-text" for="interpolationType">Interpolation type</label>
+        <label class="input-group-text" for="interpolationType">Line between dots</label>
       </div>
       <select class="custom-select" formControlName="interpolationType" (ngModelChange)="onChange($event)">
         <option *ngFor="let type of interpolationType | keyvalue" [ngValue]="type.value">{{type.key}}</option>

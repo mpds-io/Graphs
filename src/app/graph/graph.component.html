@@ -3,6 +3,7 @@
     <canvas id="functionCurveEditor" tabindex="-1">
       Error: Your browser does not support the HTML canvas element.
     </canvas>
+
     <form [formGroup]="graphForm" id="graphForm" class="d-flex flex-column pl-3 pr-3 overflow-auto">
       <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mt-1" role="alert">
         {{ error }}
@@ -82,6 +83,10 @@
       <div style="text-align: center">
         <span>Graph status: <span class="status">{{graphForm.status}}</span></span>
       </div>
+
+      <span class="mt-4"></span>
+      <button class="btn-danger" (click)="recutGraphRedirect()">Re-cut picture</button>
+
     </form>
   </div>
 </div>

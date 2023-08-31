@@ -98,6 +98,11 @@ export class GraphComponent implements OnInit, OnDestroy {
         this.handleJsonFileUrl(this.jsonFileUrl);
       }
     });
+
+    /*setTimeout(() => {
+      const result = localStorage.getItem(this.getEntry() || 'noop') || '{}';
+      console.log(JSON.parse(result));
+    }, 0);*/
   }
 
   ngOnDestroy() {
@@ -246,7 +251,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     }
 
     const calculatedGraph = this.graphMathService.calculateOriginGraph(jsonToGraphModel);
-    console.log(calculatedGraph);
+    //console.log(calculatedGraph);
 
     this.graphFormService.setGraphData(calculatedGraph);
 
@@ -301,9 +306,9 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   saveGraphLocally() {
-    const data = this.getFixedCalculatedGraph();
+    const result = this.getFixedCalculatedGraph();
     const fileName = (this.imageFileToUpload ? this.imageFileToUpload.name.split('.')[0] : 'result') + '.json';
-    this.jsonFileService.saveJsonFromGraphData(data, fileName);
+    this.jsonFileService.saveJsonFromGraphData(result, fileName);
   }
 
   saveGraphRemotely() {
@@ -313,14 +318,18 @@ export class GraphComponent implements OnInit, OnDestroy {
       this.error = 'Empty remote endpoint url.';
       return;
     }
-    const data = this.getFixedCalculatedGraph();
-    this.httpService.postGraphData(url, data)
+    const result = this.getFixedCalculatedGraph();
+    this.httpService.postGraphData(url, result)
       .subscribe({
         next: (response: any) => {
           if (response.error) {
             this.error = response.error;
+            //const entry = this.getEntry();
+            //if (entry) localStorage.setItem(entry, JSON.stringify(result));
           }
           else if (response.redirect) {
+            //const entry = this.getEntry();
+            //if (entry) localStorage.removeItem(entry);
             window.location.href = response.redirect;
           }
           else {
@@ -329,6 +338,21 @@ export class GraphComponent implements OnInit, OnDestroy {
         },
         error: error => this.error = error.message,
       });
+  }
+
+  recutGraphRedirect() {
+    const entry = this.getEntry();
+    if (entry) window.location.href = this.configuration.getValue('redirectCutUrl') + entry;
+  }
+
+  private getEntry() {
+    // extract current B-entry number from the active URL...
+    if (!this.imageFileUrl) return false;
+
+    const entryUrl = this.imageFileUrl.split('entry').pop();
+    if (entryUrl.indexOf('B') == -1) return false;
+
+    return 'B' + entryUrl.split('B').pop();
   }
 
   getFixedCalculatedGraph() : CalculatedGraphModel {
@@ -465,8 +489,8 @@ export class GraphComponent implements OnInit, OnDestroy {
   private startup(initialEditorState: FunctionCurveEditor.EditorState) {
       const canvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById("functionCurveEditor");
       this.widget = new FunctionCurveEditor.Widget(canvas, false);
-      this.widget.setWidgetChangeEventHandler(()=> {this.widgetChangeEventHandler()});
-      this.widget.setWidgetAxisPointSetEventHandler((x)=> {this.widgetAxisPointSetEventHandler(x)});
+      this.widget.setWidgetChangeEventHandler(() => {this.widgetChangeEventHandler()});
+      this.widget.setWidgetAxisPointSetEventHandler((x) => {this.widgetAxisPointSetEventHandler(x)});
       this.widget.setEditorState(initialEditorState);
   }
 }
