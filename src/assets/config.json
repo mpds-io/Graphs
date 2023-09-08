@@ -1,4 +1,5 @@
 {
     "postGraphDataUrl": "/upload",
-    "redirectCutUrl": "/pageshow?redir=markup&entry="
+    "redirectCutUrl": "/pubcut?redir=markup&entry=",
+    "cancelUrl": "/cancel"
 }

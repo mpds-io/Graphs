@@ -14,7 +14,7 @@
 
       <span class="mt-1"></span>
       <div>
-        <textarea formControlName="graphName" class="form-control" placeholder="Graph name" [ngClass]="{'is-invalid':graphForm.get('graphName').invalid}" pattern="[\x00-\x7F]+"></textarea>
+        <textarea formControlName="graphName" class="form-control" placeholder="Legend" [ngClass]="{'is-invalid':graphForm.get('graphName').invalid}" pattern="[\x00-\x7F]+"></textarea>
         <div class="invalid-feedback">
           Graph name must contain only ASCII characters.
         </div>
@@ -86,6 +86,9 @@
 
       <span class="mt-4"></span>
       <button class="btn-danger" (click)="recutGraphRedirect()">Re-cut picture</button>
+
+      <span class="mt-1"></span>
+      <button class="btn-secondary" (click)="cancelGraph()">Cancel markup</button>
 
     </form>
   </div>

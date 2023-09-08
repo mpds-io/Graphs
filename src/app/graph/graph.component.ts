@@ -345,6 +345,10 @@ export class GraphComponent implements OnInit, OnDestroy {
     if (entry) window.location.href = this.configuration.getValue('redirectCutUrl') + entry;
   }
 
+  cancelGraph() {
+    window.location.href = this.configuration.getValue('cancelUrl');
+  }
+
   private getEntry() {
     // extract current B-entry number from the active URL...
     if (!this.imageFileUrl) return false;
