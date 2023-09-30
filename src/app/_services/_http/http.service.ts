@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core'
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { CalculatedGraphModel } from 'src/app/_models/_graph/calculated-graph-model';
 
 @Injectable()
@@ -13,5 +13,12 @@ export class HttpService {
 
   public postGraphData(url: string, data: CalculatedGraphModel) {
     return this.http.post(url, data);
+  }
+
+  public postDeleteGraph(url: string, entry: string, subplot: number) {
+    return this.http.post(url, new HttpParams()
+      .append("entry", entry)
+      .append("subplot", subplot)
+    );
   }
 }

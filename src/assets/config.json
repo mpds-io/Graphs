@@ -1,5 +1,8 @@
 {
     "postGraphDataUrl": "/upload",
     "redirectCutUrl": "/pubcut?redir=markup&entry=",
-    "cancelUrl": "/cancel"
+    "cancelUrl": "/cancel",
+    "prevNextUrl": "/markup?",
+    "addUrl": "/markup?",
+    "postDeleteGraphUrl": "/delete"
 }

@@ -51,6 +51,13 @@ export class GraphComponent implements OnInit, OnDestroy {
     yAxis: false
   };
 
+  nSubplots: number = 1;
+  curSubplot: number = 0;
+  subPlot = {
+    prev: false,
+    next: false
+  };
+
   @ViewChild('acc') accordion: NgbAccordion;
 
   constructor(private graphFormService: GraphFormService,
@@ -87,6 +94,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.startup(initialEditorState);
 
     this.route.queryParams.subscribe(params => {
+      this.nSubplots = params['n_subplots'];
       this.imageFileUrl = params['png'];
       this.jsonFileUrl = params['json'];
       if(this.imageFileUrl)
@@ -99,6 +107,26 @@ export class GraphComponent implements OnInit, OnDestroy {
       }
     });
 
+    setTimeout(() => {
+      this.curSubplot = this.getCurrentSubplot();
+      //console.log('subplot=' + this.curSubplot);
+
+      if (this.nSubplots == 1) return;
+
+      if (this.curSubplot >= (this.nSubplots - 1)) {
+        this.subPlot.prev = true;
+        this.subPlot.next = false;
+
+      } else if (this.curSubplot < 1) {
+        this.subPlot.prev = false;
+        this.subPlot.next = true;
+
+      } else {
+        this.subPlot.prev = true;
+        this.subPlot.next = true;
+      }
+    }, 250);
+
     /*setTimeout(() => {
       const result = localStorage.getItem(this.getEntry() || 'noop') || '{}';
       console.log(JSON.parse(result));
@@ -107,6 +135,43 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.graphFormSub.unsubscribe()
+  }
+
+  subPlotPrev() {
+    this.curSubplot--;
+    window.location.href = this.configuration.getValue('prevNextUrl') + 'subplot=' + this.curSubplot + '&entry=' + this.getEntry();
+  }
+
+  subPlotNext() {
+    this.curSubplot++;
+    window.location.href = this.configuration.getValue('prevNextUrl') + 'subplot=' + this.curSubplot + '&entry=' + this.getEntry();
+  }
+
+  addGraph() {
+    if (!this.jsonFileUrl) return alert('Please finish the current graph');
+    window.location.href = this.configuration.getValue('addUrl') + 'append=1&subplot=' + this.nSubplots + '&entry=' + this.getEntry();
+  }
+
+  deleteGraph() {
+    if (!this.jsonFileUrl || (!this.subPlot.prev && !this.subPlot.next)) return alert('Cannot delete current graph');
+    if (!confirm('Are you REALLY sure to DELETE this markup?')) return;
+
+    const url = this.configuration.getValue('postDeleteGraphUrl'),
+      entry = this.getEntry();
+
+    if (!url || !entry) {
+      this.error = 'Empty remote endpoint url.';
+      return;
+    }
+
+    this.httpService.postDeleteGraph(url, entry, this.curSubplot)
+      .subscribe({
+        next: (response: any) => {
+          const newSubplot = this.curSubplot === 0 ? this.curSubplot : this.curSubplot - 1;
+          window.location.href = this.configuration.getValue('prevNextUrl') + 'subplot=' + newSubplot + '&entry=' + entry;
+        },
+        error: error => this.error = error.message,
+      });
   }
 
   addSubgraph() {
@@ -350,13 +415,23 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   private getEntry() {
-    // extract current B-entry number from the active URL...
+    // extract current B-entry number from the active URL
     if (!this.imageFileUrl) return false;
 
     const entryUrl = this.imageFileUrl.split('entry').pop();
     if (entryUrl.indexOf('B') == -1) return false;
 
     return 'B' + entryUrl.split('B').pop();
+  }
+
+  private getCurrentSubplot() {
+    // extract current sub-graph number from the active URL
+    // NB starts from 1, not from 0
+    if (!this.jsonFileUrl) return 0;
+
+    let subplot = parseInt(this.jsonFileUrl.split('subplot').pop().replace('=', ''));
+
+    return subplot;
   }
 
   getFixedCalculatedGraph() : CalculatedGraphModel {

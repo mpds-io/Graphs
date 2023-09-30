@@ -1,9 +1,10 @@
 {
   "name": "graphs",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
+    "dev": "ng serve",
+    "start": "ng build --base-href /graphs/  --watch",
     "build": "ng build --base-href /graphs/",
     "test": "ng test",
     "lint": "ng lint",

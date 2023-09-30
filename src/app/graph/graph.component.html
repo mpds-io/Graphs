@@ -4,6 +4,9 @@
       Error: Your browser does not support the HTML canvas element.
     </canvas>
 
+    <div *ngIf="subPlot.prev" (click)="subPlotPrev()" id="subplot_prev" title="Previous graph">&larr;</div>
+    <div *ngIf="subPlot.next" (click)="subPlotNext()" id="subplot_next" title="Next graph">&rarr;</div>
+
     <form [formGroup]="graphForm" id="graphForm" class="d-flex flex-column pl-3 pr-3 overflow-auto">
       <div *ngIf="error" class="alert alert-danger alert-dismissible fade show mt-1" role="alert">
         {{ error }}
@@ -85,10 +88,16 @@
       </div>
 
       <span class="mt-4"></span>
-      <button class="btn-danger" (click)="recutGraphRedirect()">Re-cut picture</button>
+      <div>
+      <div style="float:left;"><button class="btn-primary" style="width:110px !important;" (click)="addGraph()">Add new graph</button></div>
+      <div style="float:right;"><button class="btn-danger" style="width:110px !important;" (click)="recutGraphRedirect()">Re-cut picture</button></div>
+      </div>
 
       <span class="mt-1"></span>
-      <button class="btn-secondary" (click)="cancelGraph()">Cancel markup</button>
+      <div>
+      <div style="float:left;"><button class="btn-danger" style="width:110px !important;" (click)="deleteGraph()">Delete graph</button></div>
+      <div style="float:right;"><button class="btn-secondary" style="width:110px !important;" (click)="cancelGraph()">Cancel markup</button></div>
+      </div>
 
     </form>
   </div>
