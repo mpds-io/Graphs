@@ -26,7 +26,7 @@ ul {
 
 #subplot_prev, #subplot_next{display:block;position:absolute;top:695px;font-family:Courier;font-size:42px;overflow:hidden;line-height:26px;width:34px;height:34px;text-align:center;color:#fff;background:#000;z-index:150;border-radius:18px;cursor:pointer;user-select:none;}
 #subplot_prev{left:1%;}
-#subplot_next{left:61%;}
+#subplot_next{left:60%;}
 @-moz-document url-prefix(){
     #subplot_prev, #subplot_next{line-height:42px !important;}
 }

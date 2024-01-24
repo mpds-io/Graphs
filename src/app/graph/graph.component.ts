@@ -111,7 +111,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       this.curSubplot = this.getCurrentSubplot();
       //console.log('subplot=' + this.curSubplot);
 
-      if (this.nSubplots == 1) return;
+      if (this.nSubplots <= 1) return;
 
       if (this.curSubplot >= (this.nSubplots - 1)) {
         this.subPlot.prev = true;
