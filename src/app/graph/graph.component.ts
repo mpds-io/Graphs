@@ -3,7 +3,6 @@ import { UntypedFormGroup, UntypedFormArray } from '@angular/forms'
 import { GraphFormService } from '../_services/_graph/graph-form.service'
 import { Subscription } from 'rxjs'
 import * as FunctionCurveEditor from "../function-curve-editor/Index";
-import { NgbPanelChangeEvent, NgbAccordion } from '@ng-bootstrap/ng-bootstrap';
 import { ButtonsState } from '../_models/_graph/buttons-state';
 import { Graph } from '../_models/_graph';
 import { InterpolationType } from '../_models/_graph/interpolation-type';
@@ -16,6 +15,7 @@ import { JsonToGraphModel } from '../_models/_graph/json-to-graph-model';
 import { CalculatedGraphModel } from '../_models/_graph/calculated-graph-model';
 import { ActivatedRoute } from '@angular/router';
 import { ConfigurationService } from '../_services/_config/configuration.service';
+import { NgbAccordionDirective } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'graph',
@@ -58,7 +58,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     next: false
   };
 
-  @ViewChild('acc') accordion: NgbAccordion;
+  @ViewChild('acc') accordion: NgbAccordionDirective;
 
   constructor(private graphFormService: GraphFormService,
               private graphMathService: GraphMathService,
@@ -262,7 +262,6 @@ export class GraphComponent implements OnInit, OnDestroy {
       && length == 1)
     {
       this.currentActivePanelId = 0;
-      this.accordion.activeIds = this.currentActivePanelId.toString();
     }
   }
 
@@ -335,7 +334,6 @@ export class GraphComponent implements OnInit, OnDestroy {
     }
 
     this.currentActivePanelId = 0;
-    this.accordion.activeIds = this.currentActivePanelId.toString();
 
     if(this.currentActivePanelId >= calculatedGraph.subgraphs.length)
     {
@@ -491,16 +489,12 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.widget.setEditorState(eState);
   }
 
-  public toggleAccordian(props: NgbPanelChangeEvent) {
-    if(props.nextState == true)
-    {
+  public toggleAccordion(itemId: number) {
+    if(this.accordion.isExpanded(itemId.toString())) {
       this.previousActivePanelId = this.currentActivePanelId;
-      this.currentActivePanelId = parseInt(props.panelId);
+      this.currentActivePanelId = itemId;
       this.widget.setConnected(true);
-    }
-
-    if(props.nextState == false)
-    {
+    } else {
       this.previousActivePanelId = this.currentActivePanelId;
       this.currentActivePanelId = undefined;
       this.widget.setConnected(false);
