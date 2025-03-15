@@ -2,10 +2,11 @@ import { Component, OnInit, Input, Output, ChangeDetectionStrategy, EventEmitter
 import { UntypedFormGroup } from '@angular/forms'
 
 @Component({
-  selector: 'y-axis-point',
-  templateUrl: './y-axis-point.component.html',
-  styleUrls: ['./y-axis-point.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'y-axis-point',
+    templateUrl: './y-axis-point.component.html',
+    styleUrls: ['./y-axis-point.component.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class YAxisPointComponent implements OnInit {
   @Input() yAxisPointForm: UntypedFormGroup

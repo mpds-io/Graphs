@@ -21,7 +21,8 @@ import { CommentModel } from '../_models/_graph/comments-model';
 @Component({
   selector: 'graph',
   templateUrl: './graph.component.html',
-  styleUrls: ['./graph.component.css']
+  styleUrls: ['./graph.component.css'],
+  standalone: false
 })
 export class GraphComponent implements OnInit, OnDestroy {
   graphForm: UntypedFormGroup;
@@ -67,11 +68,11 @@ export class GraphComponent implements OnInit, OnDestroy {
   @ViewChild('acc') accordion: NgbAccordionDirective;
 
   constructor(private graphFormService: GraphFormService,
-              private graphMathService: GraphMathService,
-              private jsonFileService: JsonFileService,
-              private httpService: HttpService,
-              private route: ActivatedRoute,
-              private configuration: ConfigurationService) { }
+    private graphMathService: GraphMathService,
+    private jsonFileService: JsonFileService,
+    private httpService: HttpService,
+    private route: ActivatedRoute,
+    private configuration: ConfigurationService) { }
 
   ngOnInit() {
     this.graphFormSub = this.graphFormService.graphForm$
@@ -83,13 +84,13 @@ export class GraphComponent implements OnInit, OnDestroy {
       });
 
     const initialEditorState = <FunctionCurveEditor.EditorState>{
-      knots:          [],
-      xMin:           0,
-      xMax:           1000,
-      yMin:           0,
-      yMax:           700,
+      knots: [],
+      xMin: 0,
+      xMax: 1000,
+      yMin: 0,
+      yMax: 700,
       extendedDomain: false,
-      gridEnabled:    false,
+      gridEnabled: false,
       interpolationMethod: "bSpline"
     };
 
@@ -111,7 +112,7 @@ export class GraphComponent implements OnInit, OnDestroy {
             this.onAxisPointsChanges();
           } catch (error) {
             this.error = error.message;
-          } 
+          }
         },
         error: error => this.error = error.message
       });
@@ -198,8 +199,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
     const length = this.graphFormService.getSubgraphsLength();
 
-    if(length == 1)
-    {
+    if (length == 1) {
       this.setInitialWidgetState();
     }
   }
@@ -217,8 +217,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
     const length = this.graphFormService.getSubgraphsLength();
 
-    if(this.currentActivePanelId <= length)
-    {
+    if (this.currentActivePanelId <= length) {
       this.setInitialWidgetState();
     }
   }
@@ -227,7 +226,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.graphFormService.deleteXAxisPoint(index);
 
     const eState = this.widget.getEditorState();
-    eState.xAxisPoints.splice(index,1);
+    eState.xAxisPoints.splice(index, 1);
     eState.axisPointIndex = 0;
     this.widget.setEditorState(eState);
   }
@@ -236,12 +235,12 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.graphFormService.deleteYAxisPoint(index);
 
     const eState = this.widget.getEditorState();
-    eState.yAxisPoints.splice(index,1);
+    eState.yAxisPoints.splice(index, 1);
     eState.axisPointIndex = 0;
     this.widget.setEditorState(eState);
   }
-  
-  private loadFiles() : Observable<(string | ArrayBuffer)[]> {
+
+  private loadFiles(): Observable<(string | ArrayBuffer)[]> {
     const tasks: Observable<string | ArrayBuffer>[] = [];
 
     if (this.imageFileUrl) {
@@ -257,7 +256,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     return tasks.length > 0 ? forkJoin(tasks) : of([]);
   }
 
-  private loadImageFileFromUrl(url: string) : Observable<string | ArrayBuffer> {
+  private loadImageFileFromUrl(url: string): Observable<string | ArrayBuffer> {
     return this.httpService.getFile(url).pipe(
       switchMap((blob: Blob) => {
         const expectedType = 'image/png';
@@ -297,11 +296,11 @@ export class GraphComponent implements OnInit, OnDestroy {
     return this.httpService.getFile(url).pipe(
       switchMap((blob: Blob) => {
         const expectedType = 'application/json';
-        
+
         if (blob.type !== expectedType) {
           return throwError(new Error('Wrong file type')) as Observable<string | ArrayBuffer>;
         }
-        
+
         this.jsonFileToUpload = new File(
           [blob],
           url.split('/').pop() || 'file.json',
@@ -404,7 +403,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     } else {
       jsonData = new TextDecoder('utf-8').decode(readerData);
     }
-    
+
     this.comments = this.jsonFileService.loadCommentsDataFromJsonString(jsonData);
 
     if (this.comments == undefined
@@ -426,25 +425,23 @@ export class GraphComponent implements OnInit, OnDestroy {
     const eState = this.widget.getEditorState();
     const graph = this.graphForm.value as Graph;
 
-    eState.originPoint = {x:graph.originPoint.xCoordinate, y:graph.originPoint.yCoordinate};
+    eState.originPoint = { x: graph.originPoint.xCoordinate, y: graph.originPoint.yCoordinate };
 
     eState.xAxisPoints = [];
     for (let i = 0; i < graph.xAxisPoints.length; i++) {
-      eState.xAxisPoints.push({x:graph.xAxisPoints[i].xCoordinate, y:graph.xAxisPoints[i].yCoordinate});
+      eState.xAxisPoints.push({ x: graph.xAxisPoints[i].xCoordinate, y: graph.xAxisPoints[i].yCoordinate });
     }
 
     eState.yAxisPoints = [];
     for (let i = 0; i < graph.yAxisPoints.length; i++) {
-      eState.yAxisPoints.push({x:graph.yAxisPoints[i].xCoordinate, y:graph.yAxisPoints[i].yCoordinate});
+      eState.yAxisPoints.push({ x: graph.yAxisPoints[i].xCoordinate, y: graph.yAxisPoints[i].yCoordinate });
     }
 
-    if(graph.subgraphs.length == 0)
-    {
+    if (graph.subgraphs.length == 0) {
       eState.knots = [];
       this.widget.setConnected(false);
     }
-    else
-    {
+    else {
       this.currentActivePanelId = 0;
       eState.knots = graph.subgraphs[this.currentActivePanelId].knots;
       eState.interpolationMethod = graph.subgraphs[this.currentActivePanelId].interpolationType;
@@ -502,8 +499,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     return btoa(binary);
   }
 
-  onShowAllSubgraphsToggle(event: any)
-  {
+  onShowAllSubgraphsToggle(event: any) {
     this.showAllSubgraphs = event.currentTarget.checked ? true : false;
 
     const eState = this.widget.getEditorState();
@@ -531,8 +527,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   saveGraphRemotely() {
     const url = this.configuration.getValue('postGraphDataUrl');
-    if (!url)
-    {
+    if (!url) {
       this.error = 'Empty remote endpoint url.';
       return;
     }
@@ -587,15 +582,14 @@ export class GraphComponent implements OnInit, OnDestroy {
     return subplot;
   }
 
-  private getFixedCalculatedGraph() : CalculatedGraphModel {
+  private getFixedCalculatedGraph(): CalculatedGraphModel {
     const graphData = this.graphForm.value as Graph;
     const calculatedGraph = this.graphMathService.calculateResultGraph(graphData);
     return calculatedGraph.toFixed(8);
   }
 
   toggleOrigin(event: MouseEvent) {
-    if(this.axisButtonActive)
-    {
+    if (this.axisButtonActive) {
       event.stopPropagation();
       return;
     }
@@ -607,8 +601,7 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   toggleXAxisPointButton(event: MouseEvent, index: number) {
-    if(this.axisButtonActive)
-    {
+    if (this.axisButtonActive) {
       event.stopPropagation();
       return;
     }
@@ -623,8 +616,7 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   toggleYAxisPointButton(event: MouseEvent, index: number) {
-    if(this.axisButtonActive)
-    {
+    if (this.axisButtonActive) {
       event.stopPropagation();
       return;
     }
@@ -645,7 +637,7 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   public toggleAccordion(itemId: number) {
-    if(this.accordion.isExpanded(itemId.toString())) {
+    if (this.accordion.isExpanded(itemId.toString())) {
       this.currentActivePanelId = itemId;
       this.widget.setConnected(true);
     } else {
@@ -659,8 +651,7 @@ export class GraphComponent implements OnInit, OnDestroy {
   setInitialWidgetState() {
     const eState = this.widget.getEditorState();
 
-    if(this.currentActivePanelId != undefined)
-    {
+    if (this.currentActivePanelId != undefined) {
       const widgetState = this.graphFormService.getSubgraphData(this.currentActivePanelId);
       eState.knots = widgetState.knots;
       eState.interpolationMethod = widgetState.interpolationType;
@@ -691,16 +682,13 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   public widgetAxisPointSetEventHandler(changedAxisPoint: AxisPointChange, index: number) {
-    if(this.pointButtonsState.origin)
-    {
+    if (this.pointButtonsState.origin) {
       document.getElementById('btn_origin').classList.remove('active');
     }
-    if(this.pointButtonsState.xAxis)
-    {
+    if (this.pointButtonsState.xAxis) {
       document.getElementById('btn_xAxis_' + index.toString()).classList.remove('active');
     }
-    if(this.pointButtonsState.yAxis)
-    {
+    if (this.pointButtonsState.yAxis) {
       document.getElementById('btn_yAxis_' + index.toString()).classList.remove('active');
     }
 

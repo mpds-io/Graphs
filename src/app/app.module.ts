@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { ReactiveFormsModule } from '@angular/forms';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule, inject, provideAppInitializer } from '@angular/core';
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 
@@ -37,12 +37,10 @@ import { ConfigurationService } from './_services/_config/configuration.service'
         BrowserAnimationsModule
     ],
     providers: [
-        {
-            provide: APP_INITIALIZER,
-            multi: true,
-            deps: [ConfigurationService],
-            useFactory: (config: ConfigurationService) => () => config.loadAppConfig()
-        },
+        provideAppInitializer(() => {
+        const initializerFn = ((config: ConfigurationService) => () => config.loadAppConfig())(inject(ConfigurationService));
+        return initializerFn();
+      }),
         GraphFormService,
         GraphMathService,
         JsonFileService,

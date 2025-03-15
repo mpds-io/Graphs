@@ -7,7 +7,8 @@ import { ButtonsState } from 'src/app/_models/_graph/buttons-state'
   selector: 'subgraph',
   templateUrl: './subgraph.component.html',
   styleUrls: ['./subgraph.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: false
 })
 export class SubgraphComponent implements OnInit {
   @Input() subgraphForm: UntypedFormGroup
@@ -23,10 +24,10 @@ export class SubgraphComponent implements OnInit {
 
   constructor() { }
 
-  ngOnInit() { 
+  ngOnInit() {
     this.subgraphForm.controls['id'].setValue(this.index);
   }
- 
+
   delete() {
     this.deleteSubgraph.emit(this.index);
   }
