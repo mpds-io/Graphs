@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core'
 import { Subgraph, Graph } from '../../_models/_graph'
 import { Point, AxisPoint } from 'src/app/_models/_graph/point'
 import { CalculatedGraphModel } from 'src/app/_models/_graph/calculated-graph-model'
-import { JsonToGraphModel } from 'src/app/_models/_graph/json-to-graph-model';
 
 @Injectable()
 export class GraphMathService {    
@@ -16,8 +15,8 @@ export class GraphMathService {
         calculatedGraph.xAxisName = data.xAxisName;
         calculatedGraph.yAxisName = data.yAxisName;
         calculatedGraph.originPoint = data.originPoint;
-        calculatedGraph.xAxisPoints = this.setXAxisPoints(data);
-        calculatedGraph.yAxisPoints = this.setYAxisPoints(data);
+        calculatedGraph.xAxisPoints = this.getSortedXAxisPoints(data);
+        calculatedGraph.yAxisPoints = this.getSortedYAxisPoints(data);
 
         for (let i = 0; i < data.subgraphs.length; i++) {
             const subgraph = new Subgraph();
@@ -43,28 +42,26 @@ export class GraphMathService {
         return calculatedGraph;
     }
 
-    public calculateOriginGraph(data: JsonToGraphModel) : CalculatedGraphModel {
-        const calculatedGraph = new CalculatedGraphModel();
+    public calculateOriginalCoordinate(
+        coordinate: Point,
+        originPoint: AxisPoint,
+        xAxisPoints: AxisPoint[], 
+        yAxisPoints: AxisPoint[]) : Point {
+            const sortedXAxisPoints = this.sortAxisPoints(xAxisPoints, point => point.xCoordinate);
+            const sortedYAxisPoints = this.sortAxisPoints(yAxisPoints, point => point.yCoordinate);
 
-        calculatedGraph.subgraphs = Array<Subgraph>();
-        calculatedGraph.xAxisPoints = Array<AxisPoint>();
-        calculatedGraph.yAxisPoints = Array<AxisPoint>();
+            const xAxisIndex = this.currentAxisIndex(sortedXAxisPoints, coordinate.x, point => point.xCoordinate);
+            const yAxisIndex = this.currentAxisIndex(sortedYAxisPoints, coordinate.y, point => point.yCoordinate);
 
-        if(data)
-        {
-            calculatedGraph.graphName = data.graphName;
-            calculatedGraph.xAxisName = data.xAxisName;
-            calculatedGraph.yAxisName = data.yAxisName;
-            calculatedGraph.originPoint = data.originPoint;
-            calculatedGraph.xAxisPoints = data.xAxisPoints;
-            calculatedGraph.yAxisPoints = data.yAxisPoints;
-            calculatedGraph.subgraphs = data.subgraphs;
-        }
 
-        return calculatedGraph;
+            return {x: coordinate.x, y: coordinate.y};
     }
 
-    private setXAxisPoints(data: Graph): AxisPoint[] {
+    private sortAxisPoints(points: AxisPoint[], keyExtractor: (point: AxisPoint) => number): AxisPoint[] {
+        return points.slice().sort((a, b) => keyExtractor(a) - keyExtractor(b));
+    }
+
+    private getSortedXAxisPoints(data: Graph): AxisPoint[] {
         const xAxisPoints = Array<AxisPoint>();
 
         data.xAxisPoints.forEach(x => {
@@ -76,7 +73,7 @@ export class GraphMathService {
         return xAxisPoints;
     }
 
-    private setYAxisPoints(data: Graph): AxisPoint[] {
+    private getSortedYAxisPoints(data: Graph): AxisPoint[] {
         const yAxisPoints = Array<AxisPoint>();
 
         data.yAxisPoints.forEach(y => {
@@ -189,6 +186,22 @@ export class GraphMathService {
 
         return result;
     }
+
+    private currentAxisIndex(
+        axisPoints: AxisPoint[],
+        coordinateValue: number,
+        coordinateValueExtractor: (point: AxisPoint) => number
+    ): number {
+        if (axisPoints.length === 0) {
+            return 0;
+        }
+        for (let i = 0; i < axisPoints.length; i++) {
+            if (coordinateValue < coordinateValueExtractor(axisPoints[i])) {
+                return i;
+            }
+        }
+        return axisPoints.length - 1;
+    }    
 
     private currentXAxisIndex(xAxisPoints: AxisPoint[], coordinate: Point) {
         let index = 0;

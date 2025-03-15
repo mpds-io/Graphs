@@ -1,21 +1,22 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core'
 import { UntypedFormGroup, UntypedFormArray } from '@angular/forms'
 import { GraphFormService } from '../_services/_graph/graph-form.service'
-import { Subscription } from 'rxjs'
+import { forkJoin, Observable, of, Subscription, throwError } from 'rxjs'
+import { switchMap } from 'rxjs/operators';
 import * as FunctionCurveEditor from "../function-curve-editor/Index";
 import { ButtonsState } from '../_models/_graph/buttons-state';
 import { Graph } from '../_models/_graph';
 import { InterpolationType } from '../_models/_graph/interpolation-type';
 import { WidgetState } from '../_models/_widget/widget-state';
-import { Point } from '../_models/_graph/point';
+import { AxisPointChange, Point } from '../_models/_graph/point';
 import { GraphMathService } from '../_services/_graph/graph-math.service';
 import { JsonFileService } from '../_services/_file/json-file.service';
 import { HttpService } from '../_services/_http/http.service';
-import { JsonToGraphModel } from '../_models/_graph/json-to-graph-model';
 import { CalculatedGraphModel } from '../_models/_graph/calculated-graph-model';
 import { ActivatedRoute } from '@angular/router';
 import { ConfigurationService } from '../_services/_config/configuration.service';
 import { NgbAccordionDirective } from '@ng-bootstrap/ng-bootstrap';
+import { CommentModel } from '../_models/_graph/comments-model';
 
 @Component({
   selector: 'graph',
@@ -33,17 +34,22 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   imageFileToUpload: File = null;
   jsonFileToUpload: File = null;
+  commentsFileToUpload: File = null;
+
+  base64ImageString: string;
+  comments: CommentModel[];
 
   imageFileUrl = "";
-  jsonFileUrl = "";
+  graphFileUrl = "";
+  commentsFileUrl = "";
 
   error = '';
 
-  viewAllSubgraphsActive: boolean = false;
+  showAllSubgraphs: boolean = false;
+  showComments: boolean = false;
   axisButtonActive: boolean = false;
 
   currentActivePanelId: number = undefined;
-  previousActivePanelId: number = undefined;
 
   pointButtonsState: ButtonsState = {
     origin: false,
@@ -96,20 +102,23 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       this.nSubplots = params['n_subplots'];
       this.imageFileUrl = params['png'];
-      this.jsonFileUrl = params['json'];
-      if(this.imageFileUrl)
-      {
-        this.handleImageFileUrl(this.imageFileUrl);
-      }
-      if(this.jsonFileUrl)
-      {
-        this.handleJsonFileUrl(this.jsonFileUrl);
-      }
+      this.graphFileUrl = params['json'];
+      this.commentsFileUrl = params['comments'];
+      this.loadFiles().subscribe({
+        next: () => {
+          try {
+            this.handleLoadedFiles();
+            this.onAxisPointsChanges();
+          } catch (error) {
+            this.error = error.message;
+          } 
+        },
+        error: error => this.error = error.message
+      });
     });
 
     setTimeout(() => {
       this.curSubplot = this.getCurrentSubplot();
-      //console.log('subplot=' + this.curSubplot);
 
       if (this.nSubplots <= 1) return;
 
@@ -126,11 +135,21 @@ export class GraphComponent implements OnInit, OnDestroy {
         this.subPlot.next = true;
       }
     }, 250);
+  }
 
-    /*setTimeout(() => {
-      const result = localStorage.getItem(this.getEntry() || 'noop') || '{}';
-      console.log(JSON.parse(result));
-    }, 0);*/
+  private onAxisPointsChanges(): void {
+    this.graphForm.get('originPoint').valueChanges.subscribe(value => {
+      console.log('originPoint changed:', value);
+      this.setEditorStateForComments();
+    });
+    this.graphForm.get('xAxisPoints').valueChanges.subscribe(value => {
+      console.log('xAxisPoints changed:', value);
+      this.setEditorStateForComments();
+    });
+    this.graphForm.get('yAxisPoints').valueChanges.subscribe(value => {
+      console.log('yAxisPoints changed:', value);
+      this.setEditorStateForComments();
+    });
   }
 
   ngOnDestroy() {
@@ -148,12 +167,12 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   addGraph() {
-    if (!this.jsonFileUrl) return alert('Please finish the current graph');
+    if (!this.graphFileUrl) return alert('Please finish the current graph');
     window.location.href = this.configuration.getValue('addUrl') + 'append=1&subplot=' + this.nSubplots + '&entry=' + this.getEntry();
   }
 
   deleteGraph() {
-    if (!this.jsonFileUrl || (!this.subPlot.prev && !this.subPlot.next)) return alert('Cannot delete current graph');
+    if (!this.graphFileUrl || (!this.subPlot.prev && !this.subPlot.next)) return alert('Cannot delete current graph');
     if (!confirm('Are you REALLY sure to DELETE this markup?')) return;
 
     const url = this.configuration.getValue('postDeleteGraphUrl'),
@@ -221,151 +240,287 @@ export class GraphComponent implements OnInit, OnDestroy {
     eState.axisPointIndex = 0;
     this.widget.setEditorState(eState);
   }
+  
+  private loadFiles() : Observable<(string | ArrayBuffer)[]> {
+    const tasks: Observable<string | ArrayBuffer>[] = [];
 
-  handleImageFileInput(files: FileList) {
-    this.imageFileToUpload = files.item(0);
+    if (this.imageFileUrl) {
+      tasks.push(this.loadImageFileFromUrl(this.imageFileUrl));
+    }
+    if (this.graphFileUrl) {
+      tasks.push(this.loadGraphFileFromUrl(this.graphFileUrl));
+    }
+    if (this.commentsFileUrl) {
+      tasks.push(this.loadCommentsFileFromUrl(this.commentsFileUrl));
+    }
 
-    if (files && this.imageFileToUpload) {
-      var reader = new FileReader();
-      reader.onload = this._handleReaderLoadedImage.bind(this);
-      reader.readAsBinaryString(this.imageFileToUpload);
+    return tasks.length > 0 ? forkJoin(tasks) : of([]);
+  }
+
+  private loadImageFileFromUrl(url: string) : Observable<string | ArrayBuffer> {
+    return this.httpService.getFile(url).pipe(
+      switchMap((blob: Blob) => {
+        const expectedType = 'image/png';
+        if (blob.type !== expectedType) {
+          return throwError(new Error('Wrong file type')) as Observable<string | ArrayBuffer>;
+        }
+        this.imageFileToUpload = new File(
+          [blob],
+          url.split('/').pop() || 'image.png',
+          { type: expectedType }
+        );
+
+        return new Observable<string | ArrayBuffer>(observer => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            if (result !== null) {
+              try {
+                this.handleLoadedImageFile(result);
+                observer.next(result);
+                observer.complete();
+              } catch (error) {
+                observer.error(error);
+              }
+            } else {
+              observer.error(new Error(`Unable to read ${this.imageFileToUpload.name} file.`));
+            }
+          };
+          reader.onerror = error => observer.error(error);
+          reader.readAsArrayBuffer(this.imageFileToUpload);
+        });
+      })
+    );
+  }
+
+  private loadGraphFileFromUrl(url: string): Observable<string | ArrayBuffer> {
+    return this.httpService.getFile(url).pipe(
+      switchMap((blob: Blob) => {
+        const expectedType = 'application/json';
+        
+        if (blob.type !== expectedType) {
+          return throwError(new Error('Wrong file type')) as Observable<string | ArrayBuffer>;
+        }
+        
+        this.jsonFileToUpload = new File(
+          [blob],
+          url.split('/').pop() || 'file.json',
+          { type: expectedType }
+        );
+
+        return new Observable<string | ArrayBuffer>(observer => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            if (result !== null) {
+              try {
+                this.handleLoadedGraphFile(result);
+                observer.next(result);
+                observer.complete();
+              } catch (error) {
+                observer.error(error);
+              }
+            } else {
+              observer.error(new Error(`Unable to read ${this.jsonFileToUpload.name} file.`));
+            }
+          };
+          reader.onerror = (error) => observer.error(error);
+          reader.readAsText(this.jsonFileToUpload);
+        });
+      })
+    );
+  }
+
+  private loadCommentsFileFromUrl(url: string): Observable<string | ArrayBuffer> {
+    return this.httpService.getFile(url).pipe(
+      switchMap((blob: Blob) => {
+        const expectedType = 'application/json';
+        if (blob.type !== expectedType) {
+          return throwError(new Error('Wrong file type')) as Observable<string | ArrayBuffer>;
+        }
+        this.commentsFileToUpload = new File(
+          [blob],
+          url.split('/').pop() || 'comments.json',
+          { type: expectedType }
+        );
+        return new Observable<string | ArrayBuffer>((observer) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result;
+            if (result !== null) {
+              try {
+                this.handleLoadedCommentsFile(result);
+                observer.next(result);
+                observer.complete();
+              } catch (error) {
+                observer.error(error);
+              }
+            } else {
+              observer.error(new Error(`Unable to read ${this.commentsFileToUpload.name} file.`));
+            }
+          };
+          reader.onerror = (error) => observer.error(error);
+          reader.readAsText(this.commentsFileToUpload);
+        });
+      })
+    );
+  }
+
+  private handleLoadedImageFile(readerData: string | ArrayBuffer) {
+    if (typeof readerData === 'string') {
+      this.base64ImageString = btoa(readerData);
+    } else {
+      this.base64ImageString = this.arrayBufferToBase64(readerData);
     }
   }
 
-  handleImageFileUrl(url: string) {
-    this.httpService.getFile(url)
-      .subscribe({
-        next: (blob: Blob) => {
-          const blobType = 'image/png';
-          if (blob.type == blobType) {
-            this.imageFileToUpload = new File([blob], url.split('\/').pop(), { type: blobType });
-            var reader = new FileReader();
-            reader.onload = this._handleReaderLoadedImage.bind(this);
-            reader.readAsBinaryString(this.imageFileToUpload);
-          }
-          else {
-            this.error = 'Wrong file type';
-          }
-        },
-        error: error => this.error = error.message,
-      });
-  }
+  private handleLoadedGraphFile(readerData: string | ArrayBuffer) {
+    let jsonData: string;
 
-  _handleReaderLoadedImage(readerEvt) {
-    var binaryString = readerEvt.target.result;
-    const base64textString = btoa(binaryString);
-    this.widget.setConnected(true);
-    this.widget.setWidgetContextImage(base64textString, this.imageFileToUpload.type);
-
-    const length = this.graphFormService.getSubgraphsLength();
-    if(this.currentActivePanelId == undefined
-      && length == 1)
-    {
-      this.currentActivePanelId = 0;
-    }
-  }
-
-  handleJsonFileInput(files: FileList) {
-    this.jsonFileToUpload = files.item(0);
-
-    if (files && this.jsonFileToUpload) {
-      var reader = new FileReader();
-      reader.onload = this._handleReaderLoadedJson.bind(this);
-      reader.readAsText(this.jsonFileToUpload);
-    }
-  }
-
-  handleJsonFileUrl(url: string) {
-    this.httpService.getFile(url)
-      .subscribe({
-        next: (blob: Blob) => {
-          const blobType = 'application/json';
-          if (blob.type == blobType) {
-            this.jsonFileToUpload = new File([blob], url.split('\/').pop(), { type: blobType });
-            var reader = new FileReader();
-            reader.onload = this._handleReaderLoadedJson.bind(this);
-            reader.readAsText(this.jsonFileToUpload);
-          }
-          else {
-            this.error = 'Wrong file type';
-          }
-        },
-        error: error => this.error = error.message,
-      });
-  }
-
-  _handleReaderLoadedJson(readerEvt) {
-    const jsonData = readerEvt.target.result;
-    let jsonToGraphModel = new JsonToGraphModel();
-
-    try {
-      jsonToGraphModel = this.jsonFileService.loadGraphDataFromJsonString(jsonData);
-
-      if (jsonToGraphModel == undefined
-        || jsonToGraphModel.subgraphs == undefined
-        || jsonToGraphModel.originPoint == undefined
-        || jsonToGraphModel.xAxisPoints == undefined
-        || jsonToGraphModel.yAxisPoints == undefined)
-      {
-        throw new Error('Invalid json structure.');
-      }
-    } catch (error) {
-      this.error = error.message;
-      throw error;
+    if (typeof readerData === 'string') {
+      jsonData = readerData;
+    } else {
+      jsonData = new TextDecoder('utf-8').decode(readerData);
     }
 
-    const calculatedGraph = this.graphMathService.calculateOriginGraph(jsonToGraphModel);
-    //console.log(calculatedGraph);
+    const calculatedGraph = this.jsonFileService.loadGraphDataFromJsonString(jsonData);
+
+    if (calculatedGraph == undefined
+      || calculatedGraph.subgraphs == undefined
+      || calculatedGraph.originPoint == undefined
+      || calculatedGraph.xAxisPoints == undefined
+      || calculatedGraph.yAxisPoints == undefined) {
+      throw new Error('Invalid json structure in \'graph\' file.');
+    }
 
     this.graphFormService.setGraphData(calculatedGraph);
+  }
 
+  private handleLoadedCommentsFile(readerData: string | ArrayBuffer) {
+    let jsonData: string;
+
+    if (typeof readerData === 'string') {
+      jsonData = readerData;
+    } else {
+      jsonData = new TextDecoder('utf-8').decode(readerData);
+    }
+    
+    this.comments = this.jsonFileService.loadCommentsDataFromJsonString(jsonData);
+
+    if (this.comments == undefined
+      || !this.comments.length) {
+      throw new Error('Invalid json structure in \'comments\' file.');
+    }
+  }
+
+  private handleLoadedFiles() {
+    if (this.base64ImageString) {
+      this.widget.setWidgetContextImage(this.base64ImageString, this.imageFileToUpload.type);
+    }
+
+    this.setEditorStateForGraph();
+    this.setEditorStateForComments();
+  }
+
+  private setEditorStateForGraph(): void {
     const eState = this.widget.getEditorState();
+    const graph = this.graphForm.value as Graph;
 
-    eState.originPoint = {x:calculatedGraph.originPoint.xCoordinate, y:calculatedGraph.originPoint.yCoordinate};
+    eState.originPoint = {x:graph.originPoint.xCoordinate, y:graph.originPoint.yCoordinate};
 
     eState.xAxisPoints = [];
-    for (let i = 0; i < calculatedGraph.xAxisPoints.length; i++) {
-      eState.xAxisPoints.push({x:calculatedGraph.xAxisPoints[i].xCoordinate, y:calculatedGraph.xAxisPoints[i].yCoordinate});
+    for (let i = 0; i < graph.xAxisPoints.length; i++) {
+      eState.xAxisPoints.push({x:graph.xAxisPoints[i].xCoordinate, y:graph.xAxisPoints[i].yCoordinate});
     }
 
     eState.yAxisPoints = [];
-    for (let i = 0; i < calculatedGraph.yAxisPoints.length; i++) {
-      eState.yAxisPoints.push({x:calculatedGraph.yAxisPoints[i].xCoordinate, y:calculatedGraph.yAxisPoints[i].yCoordinate});
+    for (let i = 0; i < graph.yAxisPoints.length; i++) {
+      eState.yAxisPoints.push({x:graph.yAxisPoints[i].xCoordinate, y:graph.yAxisPoints[i].yCoordinate});
     }
 
-    this.currentActivePanelId = 0;
-
-    if(this.currentActivePanelId >= calculatedGraph.subgraphs.length)
+    if(graph.subgraphs.length == 0)
     {
       eState.knots = [];
       this.widget.setConnected(false);
     }
     else
     {
-      eState.knots = calculatedGraph.subgraphs[this.currentActivePanelId].knots;
-      eState.interpolationMethod = calculatedGraph.subgraphs[this.currentActivePanelId].interpolationType;
+      this.currentActivePanelId = 0;
+      eState.knots = graph.subgraphs[this.currentActivePanelId].knots;
+      eState.interpolationMethod = graph.subgraphs[this.currentActivePanelId].interpolationType;
       this.widget.setConnected(true);
     }
 
     this.widget.setEditorState(eState);
   }
 
-  checkViewAllSubgraphs(event: any)
+  private setEditorStateForComments(): void {
+    const eState = this.widget.getEditorState();
+    const isValidGraph = this.graphForm.valid;
+    const graph = this.graphForm.value as Graph;
+
+    eState.showComments = this.showComments;
+    eState.comments = [];
+
+    if (this.showComments
+      && this.comments
+      && !isValidGraph) {
+      this.widget.setEditorState(eState);
+      throw new Error('Cannot show comments. Reason - invalid Graph status.');
+    }
+
+    if (this.comments && isValidGraph) {
+      this.comments.forEach(comment => {
+        const canvasCoordinate = this.graphMathService.calculateOriginalCoordinate(
+          {
+            x: comment.coordinate.x,
+            y: comment.coordinate.y,
+          },
+          graph.originPoint,
+          graph.xAxisPoints,
+          graph.yAxisPoints);
+        eState.comments.push({
+          coordinate: {
+            x: canvasCoordinate.x,
+            y: canvasCoordinate.y,
+          },
+          text: comment.text,
+        });
+      });
+    }
+
+    this.widget.setEditorState(eState);
+  }
+
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  onShowAllSubgraphsToggle(event: any)
   {
-    if(event.currentTarget.checked)
-    {
-      this.viewAllSubgraphsActive = true;
-    }
-    else
-    {
-      this.viewAllSubgraphsActive = false;
-    }
+    this.showAllSubgraphs = event.currentTarget.checked ? true : false;
 
     const eState = this.widget.getEditorState();
     const graphData = this.graphForm.value as Graph;
     eState.curvesState = this.graphFormService.getSubgraphsState(graphData.subgraphs);
-    eState.viewAllOptionActive = this.viewAllSubgraphsActive;
+    eState.showAllCurves = this.showAllSubgraphs;
     this.widget.setEditorState(eState);
+  }
+
+  onShowCommentsToggle(event: any) {
+    this.showComments = event.currentTarget.checked ? true : false;
+
+    try {
+      this.setEditorStateForComments();
+    } catch (error) {
+      this.error = error.message;
+    }
   }
 
   saveGraphLocally() {
@@ -425,14 +580,14 @@ export class GraphComponent implements OnInit, OnDestroy {
   private getCurrentSubplot() {
     // extract current sub-graph number from the active URL
     // NB starts from 1, not from 0
-    if (!this.jsonFileUrl) return 0;
+    if (!this.graphFileUrl) return 0;
 
-    let subplot = parseInt(this.jsonFileUrl.split('subplot').pop().replace('=', ''));
+    let subplot = parseInt(this.graphFileUrl.split('subplot').pop().replace('=', ''));
 
     return subplot;
   }
 
-  getFixedCalculatedGraph() : CalculatedGraphModel {
+  private getFixedCalculatedGraph() : CalculatedGraphModel {
     const graphData = this.graphForm.value as Graph;
     const calculatedGraph = this.graphMathService.calculateResultGraph(graphData);
     return calculatedGraph.toFixed(8);
@@ -491,11 +646,9 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   public toggleAccordion(itemId: number) {
     if(this.accordion.isExpanded(itemId.toString())) {
-      this.previousActivePanelId = this.currentActivePanelId;
       this.currentActivePanelId = itemId;
       this.widget.setConnected(true);
     } else {
-      this.previousActivePanelId = this.currentActivePanelId;
       this.currentActivePanelId = undefined;
       this.widget.setConnected(false);
     }
@@ -537,7 +690,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.graphFormService.setSubgraphData(widgetState);
   }
 
-  public widgetAxisPointSetEventHandler(index: number) {
+  public widgetAxisPointSetEventHandler(changedAxisPoint: AxisPointChange, index: number) {
     if(this.pointButtonsState.origin)
     {
       document.getElementById('btn_origin').classList.remove('active');
@@ -557,13 +710,22 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.pointButtonsState.yAxis = false;
 
     this.togglePointButton();
+
+    const eState = this.widget.getEditorState();
+    const widgetState = new WidgetState();
+    widgetState.originPoint = eState.originPoint as Point;
+    widgetState.xAxisPoints = eState.xAxisPoints as Point[];
+    widgetState.yAxisPoints = eState.yAxisPoints as Point[];
+    widgetState.axisPointIndex = eState.axisPointIndex;
+    widgetState.changedAxisPoint = changedAxisPoint;
+    this.graphFormService.setAxisPointsData(widgetState);
   }
 
   private startup(initialEditorState: FunctionCurveEditor.EditorState) {
-      const canvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById("functionCurveEditor");
-      this.widget = new FunctionCurveEditor.Widget(canvas, false);
-      this.widget.setWidgetChangeEventHandler(() => {this.widgetChangeEventHandler()});
-      this.widget.setWidgetAxisPointSetEventHandler((x) => {this.widgetAxisPointSetEventHandler(x)});
-      this.widget.setEditorState(initialEditorState);
+    const canvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById("functionCurveEditor");
+    this.widget = new FunctionCurveEditor.Widget(canvas, false);
+    this.widget.setWidgetChangeEventHandler(() => { this.widgetChangeEventHandler() });
+    this.widget.setWidgetAxisPointSetEventHandler((changedAxisPoint, index) => { this.widgetAxisPointSetEventHandler(changedAxisPoint as AxisPointChange, index) });
+    this.widget.setEditorState(initialEditorState);
   }
 }

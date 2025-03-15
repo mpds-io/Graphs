@@ -309,21 +309,153 @@ class FunctionPlotter {
       const wctx = this.wctx;
       this.clearCanvas();
       this.drawImage();
-      if (wctx.eState.gridEnabled) 
-      {
+
+      if (wctx.eState.gridEnabled) {
          this.drawGrid(); 
       }
+      
       this.drawAxisPoints();
+      
+      if (wctx.eState.showComments) {
+         this.drawComments();
+      }
 
-      if(wctx.eState.viewAllOptionActive)
-      {
+      if(wctx.eState.showAllCurves) {
          this.drawAllCurves(); 
       }
-      else
-      {
+      else {
          this.drawCurrentCurve(); 
       }     
    }
+
+   drawComments() {
+      const wctx = this.wctx;
+      const comments = wctx.eState.comments;
+
+      comments.forEach(comment => {
+         this.drawMarker(comment.coordinate)
+      });
+
+      const index = wctx.iState.potentialCommentNdx;
+
+      if (index != undefined) {
+         this.drawTooltip(comments[index].coordinate, comments[index].text);
+      }
+   }
+
+   // Draw a marker: a circle with an exclamation mark inside.
+   drawMarker(lPoint: Point) {
+      const wctx = this.wctx;
+      const ctx = this.ctx;
+      const markerRadius = 12;
+      const point = wctx.mapLogicalToCanvasCoordinates(lPoint);
+
+      ctx.save();
+
+      // Draw the circle with a pleasant red color.
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, markerRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "#ff6f61";
+      ctx.fill();
+
+      // Draw the exclamation mark.
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("!", point.x, point.y);
+
+      ctx.restore();
+    }
+
+    // Draw a tooltip above the marker that shows the comment text.
+    drawTooltip(lPoint: Point, text: string) {
+      const wctx = this.wctx;
+      const ctx = this.ctx;
+      const markerRadius = 12;
+      const point = wctx.mapLogicalToCanvasCoordinates(lPoint);
+
+      ctx.save();
+
+      // Set font and calculate text size
+      ctx.font = "14px sans-serif";
+      const padding = 6;
+      const margin = 6;
+      const lineHeight = 18;
+      const maxTextWidth = 250; // Maximum width for each line before wrapping.
+
+      // Automatically wrap the text into multiple lines.
+      const lines = this.wrapText(text, maxTextWidth);
+
+      // Compute the actual maximum line width.
+      let maxLineWidth = 0;
+      lines.forEach(line => {
+        const metrics = ctx.measureText(line);
+        maxLineWidth = Math.max(maxLineWidth, metrics.width);
+      });
+
+      // Determine tooltip dimensions
+      const tooltipWidth = maxLineWidth + padding * 2;
+      const tooltipHeight = lineHeight * lines.length + padding * 2;
+
+      // Position the tooltip above the marker.
+      let tooltipX = point.x - tooltipWidth / 2;
+      let tooltipY = point.y - markerRadius - margin - tooltipHeight;
+
+      // Ensure the tooltip is not drawn off the canvas.
+      tooltipX = Math.max(tooltipX, 10);
+      tooltipY = Math.max(tooltipY, 10);
+
+      // Draw a rounded rectangle for the tooltip background.
+      const radius = 5;
+      ctx.beginPath();
+      ctx.moveTo(tooltipX + radius, tooltipY);
+      ctx.lineTo(tooltipX + tooltipWidth - radius, tooltipY);
+      ctx.quadraticCurveTo(tooltipX + tooltipWidth, tooltipY, tooltipX + tooltipWidth, tooltipY + radius);
+      ctx.lineTo(tooltipX + tooltipWidth, tooltipY + tooltipHeight - radius);
+      ctx.quadraticCurveTo(tooltipX + tooltipWidth, tooltipY + tooltipHeight, tooltipX + tooltipWidth - radius, tooltipY + tooltipHeight);
+      ctx.lineTo(tooltipX + radius, tooltipY + tooltipHeight);
+      ctx.quadraticCurveTo(tooltipX, tooltipY + tooltipHeight, tooltipX, tooltipY + tooltipHeight - radius);
+      ctx.lineTo(tooltipX, tooltipY + radius);
+      ctx.quadraticCurveTo(tooltipX, tooltipY, tooltipX + radius, tooltipY);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.fill();
+
+      // Draw each line of the wrapped text.
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let i = 0; i < lines.length; i++) {
+        const lineX = tooltipX + tooltipWidth / 2;
+        const lineY = tooltipY + padding + i * lineHeight + lineHeight / 2;
+        ctx.fillText(lines[i], lineX, lineY);
+      }
+
+      ctx.restore();
+    }
+
+    // Helper function that wraps text into lines based on a maximum width.
+    wrapText(text: string, maxWidth: number) {
+      const ctx = this.ctx;
+      const words = text.split(" ");
+      const lines = [];
+      let currentLine = words[0];
+
+      for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const testLine = currentLine + " " + word;
+        const testWidth = ctx.measureText(testLine).width;
+        if (testWidth > maxWidth) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      lines.push(currentLine);
+      return lines;
+    }
    
    drawCurrentCurve() {
       const wctx = this.wctx;
@@ -403,7 +535,7 @@ class PointerController {
 
    public processSpaceClick() {
       const wctx = this.wctx;
-      if(wctx.eState.viewAllOptionActive)
+      if(wctx.eState.showAllCurves)
       {
          return;
       }
@@ -474,6 +606,7 @@ class PointerController {
    private pointerMoveEventListener = (event: PointerEvent) => {
       if (!this.pointers.has(event.pointerId)) {
          this.updatePotentialKnot(event);
+         this.updatePotentialComment(event);
          return; }
       this.trackPointer(event);
       if (this.pointers.size == 1) {
@@ -631,7 +764,7 @@ class PointerController {
       const wctx = this.wctx;
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.button != 0) {
          return; }
-      if(wctx.eState.viewAllOptionActive)
+      if(wctx.eState.showAllCurves)
       {
          return;
       }
@@ -652,7 +785,7 @@ class PointerController {
          wctx.addOriginPoint(lPoint);
          wctx.requestRefresh();
          wctx.fireChangeEvent();
-         wctx.fireAxisPointSetEvent();
+         wctx.fireAxisPointSetEvent(AxisPointChange.Origin);
          return true;
       }
 
@@ -661,7 +794,7 @@ class PointerController {
          wctx.addXPoint(lPoint);
          wctx.requestRefresh();
          wctx.fireChangeEvent();
-         wctx.fireAxisPointSetEvent();
+         wctx.fireAxisPointSetEvent(AxisPointChange.XAxis);
          return true;
       }
 
@@ -670,7 +803,7 @@ class PointerController {
          wctx.addYPoint(lPoint);
          wctx.requestRefresh();
          wctx.fireChangeEvent();
-         wctx.fireAxisPointSetEvent();
+         wctx.fireAxisPointSetEvent(AxisPointChange.YAxis);
          return true;
       }
 
@@ -696,13 +829,33 @@ class PointerController {
       const knotNdx = this.findNearKnot(cPoint, event.pointerType);
       if (wctx.iState.potentialKnotNdx != knotNdx) {
         wctx.iState.potentialKnotNdx = knotNdx;
-        wctx.requestRefresh(); }}
+        wctx.requestRefresh();
+      }
+   }
+
+   private updatePotentialComment (event: PointerEvent) {
+      const wctx = this.wctx;
+      const cPoint = this.getCanvasCoordinatesFromEvent(event);
+      const commentNdx = this.findNearComment(cPoint, event.pointerType);
+      if (wctx.iState.potentialCommentNdx != commentNdx) {
+        wctx.iState.potentialCommentNdx = commentNdx;
+        wctx.requestRefresh();
+      }
+   }
 
    private findNearKnot (cPoint: Point, pointerType: string) : number | undefined {
       const wctx = this.wctx;
       const r = wctx.findNearestKnot(cPoint);
       const proximityRange = (pointerType == "touch") ? 30 : 15;
-      return (r && r.distance <= proximityRange) ? r.knotNdx : undefined; }
+      return (r && r.distance <= proximityRange) ? r.knotNdx : undefined;
+   }
+
+   private findNearComment (cPoint: Point, pointerType: string) : number | undefined {
+      const wctx = this.wctx;
+      const r = wctx.findNearestComment(cPoint);
+      const proximityRange = (pointerType == "touch") ? 30 : 15;
+      return (r && r.distance <= proximityRange) ? r.commentNdx : undefined;
+   }
 
    private snapToGrid (lPoint: Point) : Point {
       const wctx = this.wctx;
@@ -910,6 +1063,7 @@ function genKeyName (event: KeyboardEvent) : string {
 interface InteractionState {
    selectedKnotNdx:                    number | undefined;           // index of currently selected knot or undefined
    potentialKnotNdx:                   number | undefined;           // index of potential target knot for mouse click (or undefined)
+   potentialCommentNdx:                number | undefined;           // index of potential target knot for mouse hover
    knotDragging:                       boolean;                      // true if the selected knot is beeing dragged
    planeDragging:                      boolean; }                    // true if the coordinate plane is beeing dragged
 
@@ -1000,6 +1154,7 @@ class WidgetContext {
       this.iState = {
          selectedKnotNdx:  undefined,
          potentialKnotNdx: undefined,
+         potentialCommentNdx: undefined,
          knotDragging:     false,
          planeDragging:    false}; 
    }
@@ -1053,65 +1208,76 @@ class WidgetContext {
       this.resetInteractionState();
       return true; }
 
-   public mapLogicalToCanvasXCoordinate (lx: number) : number {
-      return (lx - this.eState.xMin) * this.canvas.width / (this.eState.xMax - this.eState.xMin); }
+   public mapLogicalToCanvasXCoordinate(lx: number): number {
+      return (lx - this.eState.xMin) * this.canvas.width / (this.eState.xMax - this.eState.xMin);
+   }
 
-   public mapLogicalToCanvasYCoordinate (ly: number) : number {
-      return this.canvas.height - (ly - this.eState.yMin) * this.canvas.height / (this.eState.yMax - this.eState.yMin); }
+   public mapLogicalToCanvasYCoordinate(ly: number): number {
+      return this.canvas.height - (ly - this.eState.yMin) * this.canvas.height / (this.eState.yMax - this.eState.yMin);
+   }
 
-   public mapLogicalToCanvasCoordinates (lPoint: Point) : Point {
-      return {x: this.mapLogicalToCanvasXCoordinate(lPoint.x), y: this.mapLogicalToCanvasYCoordinate(lPoint.y)}; }
+   public mapLogicalToCanvasCoordinates(lPoint: Point): Point {
+      return { x: this.mapLogicalToCanvasXCoordinate(lPoint.x), y: this.mapLogicalToCanvasYCoordinate(lPoint.y) };
+   }
 
-   public mapCanvasToLogicalXCoordinate (cx: number) : number {
-      return this.eState.xMin + cx * (this.eState.xMax - this.eState.xMin) / this.canvas.width; }
+   public mapCanvasToLogicalXCoordinate(cx: number): number {
+      return this.eState.xMin + cx * (this.eState.xMax - this.eState.xMin) / this.canvas.width;
+   }
 
-   public mapCanvasToLogicalYCoordinate (cy: number) : number {
-      return this.eState.yMin + (this.canvas.height - cy) * (this.eState.yMax - this.eState.yMin) / this.canvas.height; }
+   public mapCanvasToLogicalYCoordinate(cy: number): number {
+      return this.eState.yMin + (this.canvas.height - cy) * (this.eState.yMax - this.eState.yMin) / this.canvas.height;
+   }
 
-   public mapCanvasToLogicalCoordinates (cPoint: Point) : Point {
-      return {x: this.mapCanvasToLogicalXCoordinate(cPoint.x), y: this.mapCanvasToLogicalYCoordinate(cPoint.y)}; }
+   public mapCanvasToLogicalCoordinates(cPoint: Point): Point {
+      return { x: this.mapCanvasToLogicalXCoordinate(cPoint.x), y: this.mapCanvasToLogicalYCoordinate(cPoint.y) };
+   }
 
-   public mapViewportToCanvasCoordinates (vPoint: Point) : Point {
+   public mapViewportToCanvasCoordinates(vPoint: Point): Point {
       const rect = this.canvas.getBoundingClientRect();
       const x1 = vPoint.x - rect.left - (this.canvas.clientLeft || 0);
-      const y1 = vPoint.y - rect.top  - (this.canvas.clientTop  || 0);
-         // Our canvas element may have a border, but must have no padding.
-         // In the future, the CSSOM View Module can probably be used for proper coordinate mapping.
-      const x = x1 / this.canvas.clientWidth  * this.canvas.width;
+      const y1 = vPoint.y - rect.top - (this.canvas.clientTop || 0);
+      // Our canvas element may have a border, but must have no padding.
+      // In the future, the CSSOM View Module can probably be used for proper coordinate mapping.
+      const x = x1 / this.canvas.clientWidth * this.canvas.width;
       const y = y1 / this.canvas.clientHeight * this.canvas.height;
-      return {x, y}; }
+      return { x, y };
+   }
 
    // Moves the coordinate plane so that `cPoint` (in canvas coordinates) matches
    // `lPoint` (in logical coordinates), while keeping the zoom factors unchanged.
-   public moveCoordinatePlane (cPoint: Point, lPoint: Point) {
+   public moveCoordinatePlane(cPoint: Point, lPoint: Point) {
       const eState = this.eState;
-      const lWidth  = eState.xMax - eState.xMin;
+      const lWidth = eState.xMax - eState.xMin;
       const lHeight = eState.yMax - eState.yMin;
-      const cWidth  = this.canvas.width;
+      const cWidth = this.canvas.width;
       const cHeight = this.canvas.height;
       eState.xMin = lPoint.x - cPoint.x * lWidth / cWidth;
       eState.xMax = eState.xMin + lWidth;
       eState.yMin = lPoint.y - (cHeight - cPoint.y) * lHeight / cHeight;
-      eState.yMax = eState.yMin + lHeight; }
+      eState.yMax = eState.yMin + lHeight;
+   }
 
-   public getZoomFactor (xy: boolean) : number {
+   public getZoomFactor(xy: boolean): number {
       const eState = this.eState;
-      return xy ? this.canvas.width / (eState.xMax - eState.xMin) : this.canvas.height / (eState.yMax - eState.yMin); }
+      return xy ? this.canvas.width / (eState.xMax - eState.xMin) : this.canvas.height / (eState.yMax - eState.yMin);
+   }
 
-   public zoom (fx: number, fyOpt?: number, cCenterOpt?: Point) {
+   public zoom(fx: number, fyOpt?: number, cCenterOpt?: Point) {
       const eState = this.eState;
       const fy = (fyOpt != undefined) ? fyOpt : fx;
-      const cCenter = cCenterOpt ? cCenterOpt : {x: this.canvas.width / 2, y: this.canvas.height / 2};
+      const cCenter = cCenterOpt ? cCenterOpt : { x: this.canvas.width / 2, y: this.canvas.height / 2 };
       const lCenter = this.mapCanvasToLogicalCoordinates(cCenter);
       eState.xMax = eState.xMin + (eState.xMax - eState.xMin) / fx;
       eState.yMax = eState.yMin + (eState.yMax - eState.yMin) / fy;
-      this.moveCoordinatePlane(cCenter, lCenter); }
+      this.moveCoordinatePlane(cCenter, lCenter);
+   }
 
-   public deleteKnot (knotNdx: number) {
+   public deleteKnot(knotNdx: number) {
       const knots = this.eState.knots;
       const oldKnots = knots.slice();
       knots.splice(knotNdx, 1);
-      this.fixUpKnotIndexes(oldKnots); }
+      this.fixUpKnotIndexes(oldKnots);
+   }
 
    public moveKnot (knotNdx: number, newPosition: Point) {
       this.eState.knots[knotNdx] = newPosition;
@@ -1119,45 +1285,44 @@ class WidgetContext {
    }
 
    // Returns the index of the newly inserted knot.
-   public addKnot (newKnot: Point) : number {
+   public addKnot(newKnot: Point): number {
       const knot = PointUtils.clone(newKnot);
       this.eState.knots.push(knot);
       //this.revampKnots();
       const knotNdx = PointUtils.findPoint(this.eState.knots, knot);
-        // (warning: This only works as long as makeXValsStrictMonotonic() modified the knots in-place and
-        // does not construct new knot point objects)
+      // (warning: This only works as long as makeXValsStrictMonotonic() modified the knots in-place and
+      // does not construct new knot point objects)
       if (knotNdx == undefined) {
-         throw new Error("Program logic error."); }
-      return knotNdx; }
+         throw new Error("Program logic error.");
+      }
+      return knotNdx;
+   }
 
-   public addOriginPoint (newKnot: Point) : void {
+   public addOriginPoint(newKnot: Point): void {
       const knot = PointUtils.clone(newKnot);
-      this.eState.originPoint = knot; }
+      this.eState.originPoint = knot;
+   }
 
-   public addXPoint (newKnot: Point) : void {
+   public addXPoint(newKnot: Point): void {
       const knot = PointUtils.clone(newKnot);
       const index = this.eState.axisPointIndex;
 
-      if(index < this.eState.xAxisPoints.length)
-      {
+      if (index < this.eState.xAxisPoints.length) {
          this.eState.xAxisPoints[index] = knot;
       }
-      else
-      {
+      else {
          this.eState.xAxisPoints.push(knot);
       }
    }
 
-   public addYPoint (newKnot: Point) : void {
+   public addYPoint(newKnot: Point): void {
       const knot = PointUtils.clone(newKnot);
       const index = this.eState.axisPointIndex;
 
-      if(index < this.eState.yAxisPoints.length)
-      {
+      if (index < this.eState.yAxisPoints.length) {
          this.eState.yAxisPoints[index] = knot;
       }
-      else
-      {
+      else {
          this.eState.yAxisPoints.push(knot);
       }
    }
@@ -1195,7 +1360,27 @@ class WidgetContext {
          if (minDist == undefined || d < minDist) {
             nearestKnotNdx = i;
             minDist = d; }}
-      return (nearestKnotNdx != undefined) ? {knotNdx: nearestKnotNdx, distance: minDist!} : undefined; }
+      return (nearestKnotNdx != undefined) ? {knotNdx: nearestKnotNdx, distance: minDist!} : undefined;
+   }
+
+   // Returns the index and distance of the nearest comment or undefined.
+   public findNearestComment (canvasPoint: Point) : {commentNdx: number; distance: number} | undefined {
+      const comments = this.eState.comments;
+      let minDist: number | undefined = undefined;
+      let nearestCommentNdx: number | undefined = undefined;
+      for (let i = 0; i < comments.length; i++) {
+         const logicalCoordinate = comments[i].coordinate;
+         const canvasCoordinate = this.mapLogicalToCanvasCoordinates(logicalCoordinate);
+         const distance = PointUtils.computeDistance(canvasCoordinate, canvasPoint);
+         if (minDist == undefined || distance < minDist) {
+            nearestCommentNdx = i;
+            minDist = distance;
+         }
+      }
+      return (nearestCommentNdx != undefined)
+         ? {commentNdx: nearestCommentNdx, distance: minDist!}
+         : undefined;
+   }
 
    public getGridParms (xy: boolean) : {space: number; span: number; pos: number; decPow: number} | undefined {
       const minSpaceC = xy ? 66 : 50;                                              // minimum space between grid lines in pixel
@@ -1248,9 +1433,9 @@ class WidgetContext {
       this.handler();
    }
 
-   public fireAxisPointSetEvent() {
+   public fireAxisPointSetEvent(changedAxisPoint: AxisPointChange) {
       const index = this.eState.axisPointIndex;
-      this.axisPointSetHandler(index);
+      this.axisPointSetHandler(changedAxisPoint, index);
    }
 }
 
@@ -1260,13 +1445,25 @@ export const enum ZoomMode {x, y, xy}
 export {InterpolationMethod};
 
 export type MyHandler = () => void;
-export type MyAxisPointSetHandler = (index: number) => void;
+export type MyAxisPointSetHandler = (changedAxisPoint: AxisPointChange, index: number) => void;
+
+// Indicates the point or points that have changed.
+export enum AxisPointChange { 
+   None   = 0,
+   Origin = 1 << 0, // 1
+   XAxis  = 1 << 1, // 2
+   YAxis  = 1 << 2, // 4
+ }
 
 export interface CurveState {
    knots: Point[];                                         // knot points for the interpolation
    interpolationMethod: InterpolationMethod;               // optimal interpolation method
 }
 
+export interface Comment {
+   coordinate: Point;
+   text: string;
+}
 
 // Function curve editor state.
 export interface EditorState {
@@ -1288,8 +1485,10 @@ export interface EditorState {
    yAxisPoints:              Point[];                      // Y-Axis point
    axisPointIndex:           number;                       // X-Axis point or Y-Axis point index to change
    coordinates:              Point[];                      // Source coordinates
-   viewAllOptionActive:      boolean;                      // draw from knots arrays
+   showAllCurves:            boolean;                      // true to draw all curves
    curvesState:              CurveState[];                 // state of curves
+   showComments:             boolean;                      // true to draw comments
+   comments:                 Comment[];                    // comments
 }
 
 // Clones and adds missing fields.
@@ -1313,8 +1512,10 @@ function cloneEditorState (eState: EditorState) : EditorState {
    eState2.yAxisPoints         = (eState.yAxisPoints ?? []).slice();
    eState2.axisPointIndex      = eState.axisPointIndex ?? 0;
    eState2.coordinates         = (eState.coordinates ?? []).slice();
-   eState2.viewAllOptionActive = eState.viewAllOptionActive ?? false;
+   eState2.showAllCurves       = eState.showAllCurves ?? false;
    eState2.curvesState         = (eState.curvesState ?? []).slice();
+   eState2.showComments        = eState.showComments ?? false;
+   eState2.comments            = (eState.comments ?? []).slice();
    return eState2; }
 
 //--- Widget -------------------------------------------------------------------

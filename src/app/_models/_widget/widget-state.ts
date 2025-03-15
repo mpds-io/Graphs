@@ -1,4 +1,4 @@
-import { Point } from '../_graph/point';
+import { AxisPointChange, Point } from '../_graph/point';
 import { InterpolationType } from '../_graph/interpolation-type';
 
 export class WidgetState{
@@ -12,4 +12,5 @@ export class WidgetState{
     interpolationType: InterpolationType;
     knots: Point[];
     coordinates: Point[];
+    changedAxisPoint: AxisPointChange;
 }

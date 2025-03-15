@@ -1,5 +1,5 @@
-import { Subgraph } from "./subgraph";
 import { AxisPoint } from './point';
+import { Subgraph } from './subgraph';
 
 export class Graph{
     graphName: string;
