@@ -139,17 +139,14 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   private onAxisPointsChanges(): void {
-    this.graphForm.get('originPoint').valueChanges.subscribe(value => {
-      console.log('originPoint changed:', value);
-      this.setEditorStateForComments();
+    this.graphForm.get('originPoint').valueChanges.subscribe(() => {
+      this.trySetEditorStateForComments();
     });
-    this.graphForm.get('xAxisPoints').valueChanges.subscribe(value => {
-      console.log('xAxisPoints changed:', value);
-      this.setEditorStateForComments();
+    this.graphForm.get('xAxisPoints').valueChanges.subscribe(() => {
+      this.trySetEditorStateForComments();
     });
-    this.graphForm.get('yAxisPoints').valueChanges.subscribe(value => {
-      console.log('yAxisPoints changed:', value);
-      this.setEditorStateForComments();
+    this.graphForm.get('yAxisPoints').valueChanges.subscribe(() => {
+      this.trySetEditorStateForComments();
     });
   }
 
@@ -418,7 +415,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     }
 
     this.setEditorStateForGraph();
-    this.setEditorStateForComments();
+    this.trySetEditorStateForComments();
   }
 
   private setEditorStateForGraph(): void {
@@ -451,9 +448,22 @@ export class GraphComponent implements OnInit, OnDestroy {
     this.widget.setEditorState(eState);
   }
 
+  private trySetEditorStateForComments(): void {
+    setTimeout(() => {
+      try {
+        this.setEditorStateForComments();
+      } catch (error) {
+        this.error = error.message;
+      }
+    }, 0);
+  }
+
   private setEditorStateForComments(): void {
     const eState = this.widget.getEditorState();
-    const isValidGraph = this.graphForm.valid;
+    const isValidOriginPoint = this.graphForm.get('originPoint').valid;
+    const isValidXAxisPoints = this.graphForm.get('xAxisPoints').valid;
+    const isValidYAxisPoints = this.graphForm.get('yAxisPoints').valid;
+    const isValidGraphToShowComments = isValidOriginPoint && isValidXAxisPoints && isValidYAxisPoints;
     const graph = this.graphForm.value as Graph;
 
     eState.showComments = this.showComments;
@@ -461,12 +471,13 @@ export class GraphComponent implements OnInit, OnDestroy {
 
     if (this.showComments
       && this.comments
-      && !isValidGraph) {
+      && !isValidGraphToShowComments
+    ) {
       this.widget.setEditorState(eState);
       throw new Error('Cannot show comments. Reason - invalid Graph status.');
     }
 
-    if (this.comments && isValidGraph) {
+    if (this.comments && isValidGraphToShowComments) {
       this.comments.forEach(comment => {
         const canvasCoordinate = this.graphMathService.calculateOriginalCoordinate(
           {
@@ -512,11 +523,7 @@ export class GraphComponent implements OnInit, OnDestroy {
   onShowCommentsToggle(event: any) {
     this.showComments = event.currentTarget.checked ? true : false;
 
-    try {
-      this.setEditorStateForComments();
-    } catch (error) {
-      this.error = error.message;
-    }
+    this.trySetEditorStateForComments();
   }
 
   saveGraphLocally() {
