@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import { saveAs } from 'file-saver';
-import { JsonToGraphModel } from 'src/app/_models/_graph/json-to-graph-model';
 import { CalculatedGraphModel } from 'src/app/_models/_graph/calculated-graph-model';
+import { CommentModel } from 'src/app/_models/_graph/comments-model';
 
 @Injectable()
 export class JsonFileService {
@@ -14,8 +14,13 @@ export class JsonFileService {
     saveAs(blob, fileName);
   }
 
-  public loadGraphDataFromJsonString(data: string) : JsonToGraphModel {
+  public loadGraphDataFromJsonString(data: string) : CalculatedGraphModel {
     const graphObjectFromJson = JSON.parse(data);
-    return graphObjectFromJson as JsonToGraphModel;
+    return graphObjectFromJson as CalculatedGraphModel;
+  }
+
+  public loadCommentsDataFromJsonString(data: string) : CommentModel[] {
+    const commentsObjectFromJson = JSON.parse(data);
+    return commentsObjectFromJson as CommentModel[];
   }
 }

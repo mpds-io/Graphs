@@ -1,19 +1,24 @@
 <form [formGroup]="yAxisPointForm" class="d-flex flex-fill">
     <div class="input-group align-items-center">
-        <button type="button" id="btn_yAxis_{{index}}" class="btn btn-info" data-toggle="button" aria-pressed="false" (click)="tryToggle($event)" title="Double click at the graph">Set Y-axis</button>
+        <button type="button" id="btn_yAxis_{{index}}" class="btn btn-info" data-toggle="button" aria-pressed="false"
+            (click)="tryToggle($event)" title="Double click at the graph">Set Y-axis</button>
         <span class="ml-1"></span>
-        <input type="number" formControlName="yValue" class="form-control" placeholder="Y"/>
-        <input type="number" hidden formControlName="xCoordinate" class="form-control" placeholder="X"/>
-        <input type="number" hidden formControlName="yCoordinate" class="form-control" placeholder="Y"/>
+        <input type="number" formControlName="yValue" name="yValue" class="form-control" placeholder="Y" />
+        <input type="number" hidden formControlName="xCoordinate" name="xCoordinate" class="form-control"
+            placeholder="X" />
+        <input type="number" hidden formControlName="yCoordinate" name="yCoordinate" class="form-control"
+            placeholder="Y" />
         <div class="d-flex pl-2 pr-2">
             <div class="custom-control custom-checkbox d-flex ">
-                <input type="checkbox" formControlName="isLogScale" class="custom-control-input" id="isLogCheckY_{{index}}">
+                <input type="checkbox" formControlName="isLogScale" name="isLogScale" class="custom-control-input"
+                    id="isLogCheckY_{{index}}">
                 <label class="custom-control-label" for="isLogCheckY_{{index}}">
                     Log
                     <sub class="col-xs-1">
-                        <input type="number" formControlName="logBase" class="max-width-3rem" placeholder="base"/>
+                        <input type="number" formControlName="logBase" name="logBase" class="max-width-3rem"
+                            placeholder="base" />
                     </sub>
-                </label>                
+                </label>
             </div>
         </div>
     </div>

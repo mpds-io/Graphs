@@ -17,70 +17,91 @@
 
       <span class="mt-1"></span>
       <div>
-        <textarea formControlName="graphName" class="form-control" placeholder="Legend" [ngClass]="{'is-invalid':graphForm.get('graphName').invalid}" pattern="[\x00-\x7F]+"></textarea>
+        <textarea formControlName="graphName" name="graphName" class="form-control" placeholder="Legend"
+          [ngClass]="{'is-invalid':graphForm.get('graphName').invalid}" pattern="[\x00-\x7F]+"></textarea>
         <div class="invalid-feedback">
           Graph name must contain only ASCII characters.
         </div>
       </div>
 
       <span class="mt-1"></span>
-      <input formControlName="xAxisName" class="form-control" placeholder="X-axis name" required>
+      <input formControlName="xAxisName" name="xAxisName" class="form-control" placeholder="X-axis name" required>
       <span class="mt-1"></span>
-      <input formControlName="yAxisName" class="form-control" placeholder="Y-axis name" required>
+      <input formControlName="yAxisName" name="yAxisName" class="form-control" placeholder="Y-axis name" required>
 
       <span class="mt-4"></span>
       <div class="input-group" formGroupName="originPoint">
-          <button type="button" id="btn_origin" class="btn btn-warning" data-toggle="button" aria-pressed="false" (click)="toggleOrigin($event)" title="Double click at the graph">Set Origin</button>
-          <span class="ml-1"></span>
-          <input type="number" formControlName="xValue" class="form-control" placeholder="X" required/>
-          <span class="ml-1"></span>
-          <input type="number" formControlName="yValue" class="form-control" placeholder="Y" required/>
-          <input type="number" hidden formControlName="xCoordinate" class="form-control" placeholder="X" required/>
-          <input type="number" hidden formControlName="yCoordinate" class="form-control" placeholder="Y" required/>
+        <button type="button" id="btn_origin" class="btn btn-warning" data-toggle="button" aria-pressed="false"
+          (click)="toggleOrigin($event)" title="Double click at the graph">Set Origin</button>
+        <span class="ml-1"></span>
+        <input type="number" formControlName="xValue" name="xValue" class="form-control" placeholder="X" required />
+        <span class="ml-1"></span>
+        <input type="number" formControlName="yValue" name="yValue" class="form-control" placeholder="Y" required />
+        <input type="number" hidden formControlName="xCoordinate" name="xCoordinate" class="form-control"
+          placeholder="X" required />
+        <input type="number" hidden formControlName="yCoordinate" name="yCoordinate" class="form-control"
+          placeholder="Y" required />
       </div>
 
       <span class="mt-3"></span>
       <button class="btn-primary" (click)="addXAxisPoint()">Add X-axis point</button>
       <div class="d-flex mt-1" *ngFor="let xAxisPoint of xAxisPoints?.controls; let i = index">
-        <x-axis-point class="d-flex flex-fill" [index]="i" [xAxisPointForm]="xAxisPoint" (deleteXAxisPoint)="deleteXAxisPoint($event)"
-        (toggleXAxisPointButton)="toggleXAxisPointButton($event,i)"></x-axis-point>
+        <x-axis-point class="d-flex flex-fill" [index]="i" [xAxisPointForm]="xAxisPoint"
+          (deleteXAxisPoint)="deleteXAxisPoint($event)"
+          (toggleXAxisPointButton)="toggleXAxisPointButton($event,i)"></x-axis-point>
         <button class="btn-danger" *ngIf="i>0" (click)="deleteXAxisPoint(i)">Remove</button>
       </div>
 
       <span class="mt-3"></span>
       <button class="btn-primary" (click)="addYAxisPoint()">Add Y-axis point</button>
       <div class="d-flex mt-1" *ngFor="let yAxisPoint of yAxisPoints?.controls; let i = index">
-        <y-axis-point class="d-flex flex-fill" [index]="i" [yAxisPointForm]="yAxisPoint" (deleteYAxisPoint)="deleteYAxisPoint($event)"
-        (toggleYAxisPointButton)="toggleYAxisPointButton($event,i)"></y-axis-point>
+        <y-axis-point class="d-flex flex-fill" [index]="i" [yAxisPointForm]="yAxisPoint"
+          (deleteYAxisPoint)="deleteYAxisPoint($event)"
+          (toggleYAxisPointButton)="toggleYAxisPointButton($event,i)"></y-axis-point>
         <button class="btn-danger" *ngIf="i>0" (click)="deleteYAxisPoint(i)">Remove</button>
       </div>
 
       <span class="mt-4"></span>
       <button class="btn-primary" (click)="addSubgraph()">Add subgraph</button>
-      <ngb-accordion #acc="ngbAccordion" class="d-flex flex-column" [closeOthers]="true" (panelChange)="toggleAccordian($event)">
-          <ngb-panel cardClass="mt-1" class="d-flex" *ngFor="let subgraph of subgraphs?.controls; let i = index" id="{{i}}">
-            <ng-template ngbPanelHeader let-opened="opened">
-                <div class="d-flex align-items-center justify-content-between">
-                  <button ngbPanelToggle class="btn btn-link container-fluid text-left pl-0">Subgraph {{i}}</button>
-                  <button class="btn-danger" (click)="deleteSubgraph(i)">Remove</button>
-                </div>
-            </ng-template>
-            <ng-template ngbPanelContent>
-                <subgraph class="d-flex" [index]="i" [subgraphForm]="subgraph" (deleteSubgraph)="deleteSubgraph($event)"
-                (interpolationTypeChanged)="interpolationTypeChanged($event)"></subgraph>
-            </ng-template>
-          </ngb-panel>
-      </ngb-accordion>
 
-      <div class="d-flex pl-2 pr-2 mt-2">
+      <div ngbAccordion #acc="ngbAccordion" class="d-flex flex-column" [closeOthers]="true">
+        <div ngbAccordionItem="{{i}}" class="d-flex mt-1" *ngFor="let subgraph of subgraphs?.controls; let i = index"
+          [collapsed]="currentActivePanelId !== i">
+          <div ngbAccordionHeader class="d-flex align-items-center justify-content-between">
+            <button ngbAccordionToggle (click)="toggleAccordion(i)"
+              class="btn btn-link container-fluid text-left pl-0">Subgraph {{i}}</button>
+            <button class="btn-danger" (click)="deleteSubgraph(i)">Remove</button>
+          </div>
+          <div ngbAccordionCollapse>
+            <div ngbAccordionBody>
+              <ng-template>
+                <subgraph class="d-flex" [index]="i" [subgraphForm]="subgraph" (deleteSubgraph)="deleteSubgraph($event)"
+                  (interpolationTypeChanged)="interpolationTypeChanged($event)">
+                </subgraph>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex mt-2">
         <div class="custom-control custom-checkbox d-flex ">
-            <input type="checkbox" class="custom-control-input" id="viewAllSubgraphs" (change)="checkViewAllSubgraphs($event)">
-            <label class="custom-control-label" for="viewAllSubgraphs">View all subgraphs</label>
+          <input type="checkbox" class="custom-control-input" id="showAllSubgraphs"
+            (change)="onShowAllSubgraphsToggle($event)">
+          <label class="custom-control-label" for="showAllSubgraphs">Show all subgraphs</label>
+        </div>
+      </div>
+
+      <div class="d-flex mt-1">
+        <div class="custom-control custom-checkbox d-flex ">
+          <input type="checkbox" class="custom-control-input" id="showComments" (change)="onShowCommentsToggle($event)">
+          <label class="custom-control-label" for="showComments">Show comments</label>
         </div>
       </div>
 
       <span class="mt-1"></span>
-      <button type="submit" class="btn btn-primary" (click)="saveGraphRemotely()" [disabled]="graphForm.invalid" title="Save result data on the server">Save graph</button>
+      <button type="submit" class="btn btn-primary" (click)="saveGraphRemotely()" [disabled]="graphForm.invalid"
+        title="Save result data on the server">Save graph</button>
 
       <span class="mt-1"></span>
       <div style="text-align: center">
@@ -89,14 +110,18 @@
 
       <span class="mt-4"></span>
       <div>
-      <div style="float:left;"><button class="btn-primary" style="width:110px !important;" (click)="addGraph()">Add new graph</button></div>
-      <div style="float:right;"><button class="btn-danger" style="width:110px !important;" (click)="recutGraphRedirect()">Re-cut picture</button></div>
+        <div style="float:left;"><button class="btn-primary" style="width:110px !important;" (click)="addGraph()">Add
+            new graph</button></div>
+        <div style="float:right;"><button class="btn-danger" style="width:110px !important;"
+            (click)="recutGraphRedirect()">Re-cut picture</button></div>
       </div>
 
       <span class="mt-1"></span>
       <div>
-      <div style="float:left;"><button class="btn-danger" style="width:110px !important;" (click)="deleteGraph()">Delete graph</button></div>
-      <div style="float:right;"><button class="btn-secondary" style="width:110px !important;" (click)="cancelGraph()">Cancel markup</button></div>
+        <div style="float:left;"><button class="btn-danger" style="width:110px !important;"
+            (click)="deleteGraph()">Delete graph</button></div>
+        <div style="float:right;"><button class="btn-secondary" style="width:110px !important;"
+            (click)="cancelGraph()">Cancel markup</button></div>
       </div>
 
     </form>
