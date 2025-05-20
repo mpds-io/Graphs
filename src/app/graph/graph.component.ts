@@ -120,6 +120,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
     setTimeout(() => {
       this.curSubplot = this.getCurrentSubplot();
+      this.trySetEditorStateForComments();
 
       if (this.nSubplots <= 1) return;
 
@@ -135,8 +136,6 @@ export class GraphComponent implements OnInit, OnDestroy {
         this.subPlot.prev = true;
         this.subPlot.next = true;
       }
-
-      this.trySetEditorStateForComments();
     }, 300);
   }
 
