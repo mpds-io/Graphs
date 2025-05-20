@@ -322,7 +322,7 @@ export class GraphMathService {
     }
 
     private shouldUseRotation(xAngle: number, yAngle: number): boolean {
-        // Максимальная угловая погрешность, при котором поворот не будет осуществляться.
+        // Максимальная угловая погрешность, при которой поворот не будет осуществляться.
         const tolerance = 0.01;
 
         return Math.abs(xAngle) > tolerance

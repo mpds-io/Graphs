@@ -84,19 +84,13 @@
         </div>
       </div>
 
-      <div class="d-flex mt-2">
-        <div class="custom-control custom-checkbox d-flex ">
-          <input type="checkbox" class="custom-control-input" id="showAllSubgraphs"
-            (change)="onShowAllSubgraphsToggle($event)">
-          <label class="custom-control-label" for="showAllSubgraphs">Show all subgraphs</label>
-        </div>
-      </div>
-
-      <div class="d-flex mt-1">
-        <div class="custom-control custom-checkbox d-flex ">
-          <input type="checkbox" class="custom-control-input" id="showComments" (change)="onShowCommentsToggle($event)">
-          <label class="custom-control-label" for="showComments">Show comments</label>
-        </div>
+      <div>
+        <div style="float:left;"><input type="checkbox" class="custom-control-input" id="showAllSubgraphs"
+            (change)="onShowAllSubgraphsToggle($event)">&nbsp;<label class="custom-control-label" for="showAllSubgraphs">
+            Show all subgraphs</label></div>
+        <div style="float:right;"><input type="checkbox" class="custom-control-input" id="showComments"
+            [checked]="true" (change)="onShowCommentsToggle($event)">&nbsp;<label class="custom-control-label"
+            for="showComments">Show comments</label></div>
       </div>
 
       <span class="mt-1"></span>

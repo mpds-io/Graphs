@@ -1,6 +1,6 @@
 import { UntypedFormControl, Validators } from '@angular/forms'
 import { Subgraph } from '../../_models/_graph/subgraph'
-import {InterpolationType} from "../../_models/_graph/interpolation-type"
+import { InterpolationType } from "../../_models/_graph/interpolation-type"
 
 export class SubgraphForm {
   id = new UntypedFormControl()
@@ -22,7 +22,7 @@ export class SubgraphForm {
     }
     else
     {
-      this.interpolationType.setValue(InterpolationType.BSpline)
+      this.interpolationType.setValue(InterpolationType.None)
     }
 
     this.name.setValue(subgraph.name)

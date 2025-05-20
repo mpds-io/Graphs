@@ -82,7 +82,7 @@ class FunctionPlotter {
       if (!ctx) {
          throw new Error("Canvas 2D context not available."); }
       this.ctx = ctx;
-      
+
       // this.graphImage = new Image();
       // this.graphImage.onload = () => {
       //    this.ctx.drawImage(this.graphImage,0,0);
@@ -130,13 +130,13 @@ class FunctionPlotter {
       ctx.lineWidth = bold ? 3 : 1;
       ctx.strokeStyle = (isDragging || isPotential) ? "#EE5500" : isSelected ? "#0080FF" : "#CC4444";
       ctx.stroke();
-      ctx.restore(); 
+      ctx.restore();
    }
 
    private drawKnots(knots: Point[]) {
-      for (let knotNdx = 0; knotNdx < knots.length; knotNdx++) 
+      for (let knotNdx = 0; knotNdx < knots.length; knotNdx++)
       {
-         this.drawKnot(knotNdx); 
+         this.drawKnot(knotNdx);
       }
    }
 
@@ -146,7 +146,7 @@ class FunctionPlotter {
       wctx.iState.planeDragging = true;
       wctx.iState.selectedKnotNdx = undefined;
       wctx.iState.potentialKnotNdx = undefined;
-      
+
       knots.forEach(knot=>{
          const ctx = this.ctx;
          const point = wctx.mapLogicalToCanvasCoordinates(knot);
@@ -157,7 +157,7 @@ class FunctionPlotter {
          ctx.lineWidth = 1;
          ctx.strokeStyle = "#CC4444";
          ctx.stroke();
-         ctx.restore(); 
+         ctx.restore();
       })
    }
 
@@ -274,19 +274,19 @@ class FunctionPlotter {
          const ly = point[1];
          const cx = Math.max(0, Math.min(1E6, wctx.mapLogicalToCanvasXCoordinate(lx)));
          const cy = Math.max(-1E6, Math.min(1E6, wctx.mapLogicalToCanvasYCoordinate(ly)));
-         ctx.lineTo(cx, cy); 
+         ctx.lineTo(cx, cy);
       }
       const lastPoint = uniFunction(1);
       const cx = Math.max(0, Math.min(1E6, wctx.mapLogicalToCanvasXCoordinate(lastPoint[0])));
       const cy = Math.max(-1E6, Math.min(1E6, wctx.mapLogicalToCanvasYCoordinate(lastPoint[1])));
-      ctx.lineTo(cx, cy); 
+      ctx.lineTo(cx, cy);
 
       ctx.strokeStyle = "#800319";
       ctx.stroke();
       ctx.restore();
    }
 
-   private drawImage() { 
+   private drawImage() {
       const wctx = this.wctx;
       const ctx = this.ctx;
 
@@ -294,7 +294,7 @@ class FunctionPlotter {
       // console.log(wctx.getZoomFactor(false));
 
        ctx.drawImage(wctx.image, wctx.mapLogicalToCanvasXCoordinate(0), wctx.mapLogicalToCanvasYCoordinate(0 + wctx.image.height),
-       wctx.image.width * wctx.getZoomFactor(true), wctx.image.height * wctx.getZoomFactor(false)); 
+       wctx.image.width * wctx.getZoomFactor(true), wctx.image.height * wctx.getZoomFactor(false));
     }
 
    private drawFunctionCurveFromKnots(knots: Point[], interpolationMethod: InterpolationMethod) {
@@ -302,7 +302,7 @@ class FunctionPlotter {
       if (knots.length < 2 && !wctx.eState.extendedDomain) {
          return; }
       const uniFunction = wctx.createInterpolationFunction(knots, interpolationMethod);
-      this.drawFunctionCurve(uniFunction); 
+      this.drawFunctionCurve(uniFunction);
    }
 
    public paint() {
@@ -311,21 +311,21 @@ class FunctionPlotter {
       this.drawImage();
 
       if (wctx.eState.gridEnabled) {
-         this.drawGrid(); 
+         this.drawGrid();
       }
-      
+
       this.drawAxisPoints();
-      
+
       if (wctx.eState.showComments) {
          this.drawComments();
       }
 
       if(wctx.eState.showAllCurves) {
-         this.drawAllCurves(); 
+         this.drawAllCurves();
       }
       else {
-         this.drawCurrentCurve(); 
-      }     
+         this.drawCurrentCurve();
+      }
    }
 
    drawComments() {
@@ -343,7 +343,7 @@ class FunctionPlotter {
       }
    }
 
-   // Draw a marker: a circle with an exclamation mark inside.
+   // Draw a marker: a circle with a symbol inside.
    drawMarker(lPoint: Point) {
       const wctx = this.wctx;
       const ctx = this.ctx;
@@ -355,15 +355,15 @@ class FunctionPlotter {
       // Draw the circle with a pleasant red color.
       ctx.beginPath();
       ctx.arc(point.x, point.y, markerRadius, 0, Math.PI * 2);
-      ctx.fillStyle = "#ff6f61";
+      ctx.fillStyle = "#ff0000";
       ctx.fill();
 
-      // Draw the exclamation mark.
+      // Draw the symbol.
       ctx.font = "bold 20px sans-serif";
       ctx.fillStyle = "white";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("!", point.x, point.y);
+      ctx.fillText("?", point.x, point.y);
 
       ctx.restore();
     }
@@ -456,7 +456,7 @@ class FunctionPlotter {
       lines.push(currentLine);
       return lines;
     }
-   
+
    drawCurrentCurve() {
       const wctx = this.wctx;
       const knots = wctx.eState.knots;
@@ -466,8 +466,8 @@ class FunctionPlotter {
       {
          this.drawFunctionCurveFromKnots(knots, interpolationMethod);
       }
-      
-      this.drawKnots(knots); 
+
+      this.drawKnots(knots);
    }
 
    private drawAllCurves() {
@@ -482,8 +482,8 @@ class FunctionPlotter {
          {
             this.drawFunctionCurveFromKnots(knots, interpolationMethod);
          }
-         
-         this.drawAllKnots(knots); 
+
+         this.drawAllKnots(knots);
       })
    }
 }
@@ -567,7 +567,7 @@ class PointerController {
 
       if(wctx.eState.interpolationMethod == "none" || knots.length < 2)
       {
-         for (let i = 0; i < knots.length; i++) 
+         for (let i = 0; i < knots.length; i++)
          {
             wctx.eState.coordinates.push(knots[i]);
          }
@@ -661,7 +661,7 @@ class PointerController {
       const wctx = this.wctx;
       if (wctx.iState.knotDragging || wctx.iState.planeDragging) {
          wctx.requestRefresh();
-         this.updateEStateCoordinates(); 
+         this.updateEStateCoordinates();
          wctx.fireChangeEvent();
       }
       this.dragStartLPos = undefined;
@@ -923,7 +923,7 @@ class KeyboardController {
                wctx.pushUndoHistoryState();
                wctx.deleteKnot(wctx.iState.selectedKnotNdx);
                wctx.requestRefresh();
-               wctx.pointerController.updateEStateCoordinates(); 
+               wctx.pointerController.updateEStateCoordinates();
                wctx.fireChangeEvent(); }
             return true; }
          case "Ctrl+z": case "Alt+Backspace": {
@@ -1093,7 +1093,7 @@ class WidgetContext {
    public hState:                      HistoryState;
 
    public image:                       HTMLImageElement;
-   
+
    public handler: MyHandler;
    public axisPointSetHandler: MyAxisPointSetHandler;
 
@@ -1147,7 +1147,7 @@ class WidgetContext {
    }
 
    public getEditorState() : EditorState {
-      return cloneEditorState(this.eState); 
+      return cloneEditorState(this.eState);
    }
 
    private resetInteractionState() {
@@ -1156,7 +1156,7 @@ class WidgetContext {
          potentialKnotNdx: undefined,
          potentialCommentNdx: undefined,
          knotDragging:     false,
-         planeDragging:    false}; 
+         planeDragging:    false};
    }
 
    // Resets the context to the initial state.
@@ -1281,7 +1281,7 @@ class WidgetContext {
 
    public moveKnot (knotNdx: number, newPosition: Point) {
       this.eState.knots[knotNdx] = newPosition;
-      //this.revampKnots(); 
+      //this.revampKnots();
    }
 
    // Returns the index of the newly inserted knot.
@@ -1290,8 +1290,8 @@ class WidgetContext {
       this.eState.knots.push(knot);
       //this.revampKnots();
       const knotNdx = PointUtils.findPoint(this.eState.knots, knot);
-      // (warning: This only works as long as makeXValsStrictMonotonic() modified the knots in-place and
-      // does not construct new knot point objects)
+      // Warning: This only works as long as makeXValsStrictMonotonic() modified the knots in-place and
+      // does not construct new knot point objects
       if (knotNdx == undefined) {
          throw new Error("Program logic error.");
       }
@@ -1330,7 +1330,7 @@ class WidgetContext {
    public replaceKnots (newKnots: Point[]) {
       this.eState.knots = newKnots;
       this.resetInteractionState();
-      //this.revampKnots(); 
+      //this.revampKnots();
    }
 
    private revampKnots() {
@@ -1404,7 +1404,7 @@ class WidgetContext {
       for (let i = 0; i < n; i++) {
          xVals[i] = knots[i].x;
          yVals[i] = knots[i].y; }
-      return createInterpolatorWithFallback(interpolationMethod, xVals, yVals); 
+      return createInterpolatorWithFallback(interpolationMethod, xVals, yVals);
    }
 
    public requestRefresh() {
@@ -1448,7 +1448,7 @@ export type MyHandler = () => void;
 export type MyAxisPointSetHandler = (changedAxisPoint: AxisPointChange, index: number) => void;
 
 // Indicates the point or points that have changed.
-export enum AxisPointChange { 
+export enum AxisPointChange {
    None   = 0,
    Origin = 1 << 0, // 1
    XAxis  = 1 << 1, // 2
@@ -1504,7 +1504,7 @@ function cloneEditorState (eState: EditorState) : EditorState {
    eState2.relevantXMax        = eState.relevantXMax;
    eState2.gridEnabled         = eState.gridEnabled ?? true;
    eState2.snapToGridEnabled   = eState.snapToGridEnabled ?? true;
-   eState2.interpolationMethod = eState.interpolationMethod ?? "bSpline";
+   eState2.interpolationMethod = eState.interpolationMethod ?? "none";
    eState2.primaryZoomMode     = eState.primaryZoomMode ?? ZoomMode.xy;
    eState2.axisButtonsState    = eState.axisButtonsState ?? new ButtonsState();
    eState2.originPoint         = eState.originPoint;
@@ -1514,7 +1514,7 @@ function cloneEditorState (eState: EditorState) : EditorState {
    eState2.coordinates         = (eState.coordinates ?? []).slice();
    eState2.showAllCurves       = eState.showAllCurves ?? false;
    eState2.curvesState         = (eState.curvesState ?? []).slice();
-   eState2.showComments        = eState.showComments ?? false;
+   eState2.showComments        = eState.showComments ?? true;
    eState2.comments            = (eState.comments ?? []).slice();
    return eState2; }
 
@@ -1562,26 +1562,26 @@ export class Widget {
 
    // Returns WidgetContext.
    public getWidgetContext() : WidgetContext {
-      return this.wctx; 
+      return this.wctx;
    }
 
    public setWidgetContextImage(base64textString: string, type: string) {
       this.wctx.setImage(base64textString, type);
    }
-   
+
    // Registers an event handler.
    // The "change" event is fired after the user has changed the edited function
    // so that the function values are different. It is not fired when only the display
    // of the function has changed, e.g. by zooming or moving the plane.
    public setWidgetChangeEventHandler(handler: MyHandler) : void {
       this.wctx.handler = handler;
-   }   
+   }
 
    // Registers an event handler.
    // Event is fired after the user has set axis point by dblclick on canvas.
    public setWidgetAxisPointSetEventHandler(handler: MyAxisPointSetHandler) : void {
       this.wctx.axisPointSetHandler = handler;
-   }  
+   }
 
    // Updates the current state of the function curve editor.
    public setEditorState (eState: EditorState) {

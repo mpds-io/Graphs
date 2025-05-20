@@ -47,7 +47,7 @@ export class GraphComponent implements OnInit, OnDestroy {
   error = '';
 
   showAllSubgraphs: boolean = false;
-  showComments: boolean = false;
+  showComments: boolean = true;
   axisButtonActive: boolean = false;
 
   currentActivePanelId: number = undefined;
@@ -91,7 +91,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       yMax: 700,
       extendedDomain: false,
       gridEnabled: false,
-      interpolationMethod: "bSpline"
+      interpolationMethod: "none"
     };
 
     this.graphFormService.addSubgraph()
@@ -135,7 +135,9 @@ export class GraphComponent implements OnInit, OnDestroy {
         this.subPlot.prev = true;
         this.subPlot.next = true;
       }
-    }, 250);
+
+      this.trySetEditorStateForComments();
+    }, 300);
   }
 
   private onAxisPointsChanges(): void {
@@ -171,7 +173,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   deleteGraph() {
     if (!this.graphFileUrl || (!this.subPlot.prev && !this.subPlot.next)) return alert('Cannot delete current graph');
-    if (!confirm('Are you REALLY sure to DELETE this markup?')) return;
+    if (!confirm('Are you REALLY sure to DELETE this markup? Expect comments shift.')) return;
 
     const url = this.configuration.getValue('postDeleteGraphUrl'),
       entry = this.getEntry();
@@ -386,7 +388,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       || calculatedGraph.originPoint == undefined
       || calculatedGraph.xAxisPoints == undefined
       || calculatedGraph.yAxisPoints == undefined) {
-      throw new Error('Invalid json structure in \'graph\' file.');
+      throw new Error('Invalid graph json structure.');
     }
 
     this.graphFormService.setGraphData(calculatedGraph);
@@ -405,7 +407,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
     if (this.comments == undefined
       || !this.comments.length) {
-      throw new Error('Invalid json structure in \'comments\' file.');
+      throw new Error('Invalid comments json structure.');
     }
   }
 
@@ -415,7 +417,6 @@ export class GraphComponent implements OnInit, OnDestroy {
     }
 
     this.setEditorStateForGraph();
-    this.trySetEditorStateForComments();
   }
 
   private setEditorStateForGraph(): void {
@@ -474,11 +475,14 @@ export class GraphComponent implements OnInit, OnDestroy {
       && !isValidGraphToShowComments
     ) {
       this.widget.setEditorState(eState);
-      throw new Error('Cannot show comments. Reason - invalid Graph status.');
+      throw new Error('Cannot show comments due to invalid graph.');
     }
 
     if (this.comments && isValidGraphToShowComments) {
       this.comments.forEach(comment => {
+
+        if (this.curSubplot !== comment.subplot) return;
+
         const canvasCoordinate = this.graphMathService.calculateOriginalCoordinate(
           {
             x: comment.coordinate.x,
@@ -487,6 +491,7 @@ export class GraphComponent implements OnInit, OnDestroy {
           graph.originPoint,
           graph.xAxisPoints,
           graph.yAxisPoints);
+
         eState.comments.push({
           coordinate: {
             x: canvasCoordinate.x,
@@ -581,7 +586,6 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   private getCurrentSubplot() {
     // extract current sub-graph number from the active URL
-    // NB starts from 1, not from 0
     if (!this.graphFileUrl) return 0;
 
     let subplot = parseInt(this.graphFileUrl.split('subplot').pop().replace('=', ''));
