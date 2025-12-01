@@ -2,3 +2,8 @@
     margin: 0 3rem;
     padding: 10px 0 0;
 }
+
+textarea.form-control {
+    letter-spacing: -0.5px;
+    resize: none;
+}
