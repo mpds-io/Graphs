@@ -5,5 +5,5 @@
 
 textarea.form-control {
     letter-spacing: -0.5px;
-    resize: none;
+    resize: horizontal;
 }
