@@ -30,3 +30,24 @@ ul {
 @-moz-document url-prefix(){
     #subplot_prev, #subplot_next{line-height:42px !important;}
 }
+
+#ai_box {
+    position: fixed;
+    bottom: 1%;
+    left: 50%;
+    width: 550px;
+    height: 44px;
+    margin-left: -275px;
+    text-align: center;
+    background: #fc6;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 44px;
+    border-radius:20px;
+    user-select:none;
+    z-index: 999;
+}
+#ai_box b {
+    color: blue;
+    cursor: pointer;
+}
