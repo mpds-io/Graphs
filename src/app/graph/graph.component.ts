@@ -46,7 +46,10 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   error = '';
 
-  showAllSubgraphs: boolean = false;
+  showAiBox: boolean = true;
+  useAiValue: boolean;
+
+  showAllSubgraphs: boolean = true;
   showComments: boolean = true;
   axisButtonActive: boolean = false;
 
@@ -157,17 +160,17 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   subPlotPrev() {
     this.curSubplot--;
-    window.location.href = this.configuration.getValue('prevNextUrl') + 'subplot=' + this.curSubplot + '&entry=' + this.getEntry();
+    window.location.replace( this.configuration.getValue('prevNextUrl') + 'subplot=' + this.curSubplot + '&entry=' + this.getEntry() );
   }
 
   subPlotNext() {
     this.curSubplot++;
-    window.location.href = this.configuration.getValue('prevNextUrl') + 'subplot=' + this.curSubplot + '&entry=' + this.getEntry();
+    window.location.replace( this.configuration.getValue('prevNextUrl') + 'subplot=' + this.curSubplot + '&entry=' + this.getEntry() );
   }
 
   addGraph() {
     if (!this.graphFileUrl) return alert('Please finish the current graph');
-    window.location.href = this.configuration.getValue('addUrl') + 'append=1&subplot=' + this.nSubplots + '&entry=' + this.getEntry();
+    window.location.replace( this.configuration.getValue('addUrl') + 'append=1&subplot=' + this.nSubplots + '&entry=' + this.getEntry() );
   }
 
   deleteGraph() {
@@ -186,7 +189,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: any) => {
           const newSubplot = this.curSubplot === 0 ? this.curSubplot : this.curSubplot - 1;
-          window.location.href = this.configuration.getValue('prevNextUrl') + 'subplot=' + newSubplot + '&entry=' + entry;
+          window.location.replace( this.configuration.getValue('prevNextUrl') + 'subplot=' + newSubplot + '&entry=' + entry );
         },
         error: error => this.error = error.message,
       });
@@ -211,6 +214,8 @@ export class GraphComponent implements OnInit, OnDestroy {
   }
 
   deleteSubgraph(index: number) {
+    if (!confirm('Are you sure you want to remove this curve?')) return;
+
     this.graphFormService.deleteSubgraph(index);
 
     const length = this.graphFormService.getSubgraphsLength();
@@ -390,6 +395,9 @@ export class GraphComponent implements OnInit, OnDestroy {
       throw new Error('Invalid graph json structure.');
     }
 
+    this.showAiBox = calculatedGraph.useAi === undefined;
+    this.useAiValue = calculatedGraph.useAi;
+
     this.graphFormService.setGraphData(calculatedGraph);
   }
 
@@ -444,6 +452,9 @@ export class GraphComponent implements OnInit, OnDestroy {
       eState.interpolationMethod = graph.subgraphs[this.currentActivePanelId].interpolationType;
       this.widget.setConnected(true);
     }
+
+    eState.showAllCurves = this.showAllSubgraphs;
+    eState.curvesState = this.graphFormService.getSubgraphsState(graph.subgraphs);
 
     this.widget.setEditorState(eState);
   }
@@ -554,7 +565,7 @@ export class GraphComponent implements OnInit, OnDestroy {
           else if (response.redirect) {
             //const entry = this.getEntry();
             //if (entry) localStorage.removeItem(entry);
-            window.location.href = response.redirect;
+            window.location.replace(response.redirect);
           }
           else {
             this.error = 'Invalid response from upload endpoint.';
@@ -566,11 +577,17 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   recutGraphRedirect() {
     const entry = this.getEntry();
-    if (entry) window.location.href = this.configuration.getValue('redirectCutUrl') + entry;
+    if (entry) window.location.replace( this.configuration.getValue('redirectCutUrl') + entry );
   }
 
   cancelGraph() {
-    window.location.href = this.configuration.getValue('cancelUrl');
+    window.location.replace( this.configuration.getValue('cancelUrl') );
+  }
+
+  useAi() {
+    const entry = this.getEntry();
+    if (!entry) return;
+    window.location.replace(this.configuration.getValue('useAiUrl') + entry);
   }
 
   private getEntry() {
@@ -595,6 +612,7 @@ export class GraphComponent implements OnInit, OnDestroy {
   private getFixedCalculatedGraph(): CalculatedGraphModel {
     const graphData = this.graphForm.value as Graph;
     const calculatedGraph = this.graphMathService.calculateResultGraph(graphData);
+    calculatedGraph.useAi = this.useAiValue;
     return calculatedGraph.toFixed(8);
   }
 
@@ -666,6 +684,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       eState.knots = widgetState.knots;
       eState.interpolationMethod = widgetState.interpolationType;
     }
+    eState.curvesState = this.graphFormService.getSubgraphsState((this.graphForm.value as Graph).subgraphs);
     this.widget.setEditorState(eState);
   }
 
@@ -689,6 +708,8 @@ export class GraphComponent implements OnInit, OnDestroy {
     widgetState.axisPointIndex = eState.axisPointIndex;
 
     this.graphFormService.setSubgraphData(widgetState);
+
+    this.widget.updateCurveState(this.currentActivePanelId, eState.knots, eState.interpolationMethod);
   }
 
   public widgetAxisPointSetEventHandler(changedAxisPoint: AxisPointChange, index: number) {

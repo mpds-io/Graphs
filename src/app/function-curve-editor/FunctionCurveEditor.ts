@@ -535,10 +535,6 @@ class PointerController {
 
    public processSpaceClick() {
       const wctx = this.wctx;
-      if(wctx.eState.showAllCurves)
-      {
-         return;
-      }
       const cPoint = wctx.mapViewportToCanvasCoordinates({x: this.mousePosition.x, y: this.mousePosition.y});
       if(!this.tryCreateAxisPoint(cPoint))
       {
@@ -764,10 +760,6 @@ class PointerController {
       const wctx = this.wctx;
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.button != 0) {
          return; }
-      if(wctx.eState.showAllCurves)
-      {
-         return;
-      }
       const cPoint = this.getCanvasCoordinatesFromEvent(event);
       if(!this.tryCreateAxisPoint(cPoint))
       {
@@ -1433,6 +1425,16 @@ class WidgetContext {
       this.handler();
    }
 
+   // Updates the state of a single curve of the "show all curves" display.
+   // Does not fire a change event and does not affect the undo history or an ongoing interaction.
+   public updateCurveState (curveIndex: number | undefined, knots: Point[], interpolationMethod: InterpolationMethod) {
+      if (curveIndex == undefined || curveIndex < 0 || curveIndex > this.eState.curvesState.length) {
+         return; }
+      this.eState.curvesState[curveIndex] = {
+         knots: knots.slice(),
+         interpolationMethod: interpolationMethod };
+      this.requestRefresh(); }
+
    public fireAxisPointSetEvent(changedAxisPoint: AxisPointChange) {
       const index = this.eState.axisPointIndex;
       this.axisPointSetHandler(changedAxisPoint, index);
@@ -1587,6 +1589,12 @@ export class Widget {
    public setEditorState (eState: EditorState) {
       const wctx = this.wctx;
       wctx.setEditorState(eState); }
+
+   // Updates the state of a single curve of the "show all curves" display.
+   // Does not fire a change event and does not affect the undo history or an ongoing interaction.
+   public updateCurveState (curveIndex: number | undefined, knots: Point[], interpolationMethod: InterpolationMethod) {
+      const wctx = this.wctx;
+      wctx.updateCurveState(curveIndex, knots, interpolationMethod); }
 
    // Returns the current graph function.
    // The returned JavaScript function maps each x value to an y value.

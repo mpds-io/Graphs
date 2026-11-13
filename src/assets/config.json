@@ -4,5 +4,6 @@
     "cancelUrl": "/cancel",
     "prevNextUrl": "/markup?",
     "addUrl": "/markup?",
-    "postDeleteGraphUrl": "/delete"
+    "postDeleteGraphUrl": "/delete",
+    "useAiUrl": "/usellm?entry="
 }

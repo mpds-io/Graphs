@@ -62,14 +62,14 @@
       </div>
 
       <span class="mt-4"></span>
-      <button class="btn-primary" (click)="addSubgraph()">Add subgraph</button>
+      <button class="btn-primary" (click)="addSubgraph()">Add curve</button>
 
       <div ngbAccordion #acc="ngbAccordion" class="d-flex flex-column" [closeOthers]="true">
         <div ngbAccordionItem="{{i}}" class="d-flex mt-1" *ngFor="let subgraph of subgraphs?.controls; let i = index"
           [collapsed]="currentActivePanelId !== i">
           <div ngbAccordionHeader class="d-flex align-items-center justify-content-between">
             <button ngbAccordionToggle (click)="toggleAccordion(i)"
-              class="btn btn-link container-fluid text-left pl-0">Subgraph {{i}}</button>
+              class="btn btn-link container-fluid text-left pl-0">Curve {{i}}</button>
             <button class="btn-danger" (click)="deleteSubgraph(i)">Remove</button>
           </div>
           <div ngbAccordionCollapse>
@@ -86,8 +86,8 @@
 
       <div>
         <div style="float:left;"><input type="checkbox" class="custom-control-input" id="showAllSubgraphs"
-            (change)="onShowAllSubgraphsToggle($event)">&nbsp;<label class="custom-control-label" for="showAllSubgraphs">
-            Show all subgraphs</label></div>
+            [checked]="true" (change)="onShowAllSubgraphsToggle($event)">&nbsp;<label class="custom-control-label" for="showAllSubgraphs">
+            Show all curves</label></div>
         <div style="float:right;"><input type="checkbox" class="custom-control-input" id="showComments"
             [checked]="true" (change)="onShowCommentsToggle($event)">&nbsp;<label class="custom-control-label"
             for="showComments">Show comments</label></div>
@@ -104,8 +104,8 @@
 
       <span class="mt-4"></span>
       <div>
-        <div style="float:left;"><button class="btn-primary" style="width:120px !important;" (click)="addGraph()">Add
-            new graph</button></div>
+        <div style="float:left;"><button class="btn-primary" style="width:120px !important;" (click)="addGraph()">Append
+            graph</button></div>
         <div style="float:right;"><button class="btn-danger" style="width:120px !important;"
             (click)="recutGraphRedirect()">Re-cut picture</button></div>
       </div>
@@ -122,6 +122,6 @@
   </div>
 </div>
 
-<div id="ai_box">
-    Would you like to use AI for this? <b id="ai_yes">Click here if yes</b>.
+<div id="ai_box" *ngIf="showAiBox">
+    Would you like to use AI for this? <b id="ai_yes" (click)="useAi()">Click here if yes</b>.
 </div>
