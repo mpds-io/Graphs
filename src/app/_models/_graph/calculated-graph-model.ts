@@ -10,6 +10,7 @@ export class CalculatedGraphModel{
     yAxisPoints: AxisPoint[];
     subgraphs: Subgraph[];
     useAi?: boolean;
+    nameAi?: string | null;
 
     public toFixed(fractionDigits?: number) : CalculatedGraphModel
     {
@@ -19,6 +20,7 @@ export class CalculatedGraphModel{
         calculatedGraph.xAxisName = this.xAxisName;
         calculatedGraph.yAxisName = this.yAxisName;
         calculatedGraph.useAi = this.useAi;
+        calculatedGraph.nameAi = this.nameAi;
 
         calculatedGraph.originPoint = {
             isLogScale : this.originPoint.isLogScale,

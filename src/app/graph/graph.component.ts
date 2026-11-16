@@ -48,6 +48,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
   showAiBox: boolean = true;
   useAiValue: boolean;
+  nameAiValue: string | null = null;
 
   showAllSubgraphs: boolean = true;
   showComments: boolean = true;
@@ -397,6 +398,7 @@ export class GraphComponent implements OnInit, OnDestroy {
 
     this.showAiBox = calculatedGraph.useAi === undefined;
     this.useAiValue = calculatedGraph.useAi;
+    this.nameAiValue = calculatedGraph.nameAi ?? null;
 
     this.graphFormService.setGraphData(calculatedGraph);
   }
@@ -613,6 +615,7 @@ export class GraphComponent implements OnInit, OnDestroy {
     const graphData = this.graphForm.value as Graph;
     const calculatedGraph = this.graphMathService.calculateResultGraph(graphData);
     calculatedGraph.useAi = this.useAiValue;
+    calculatedGraph.nameAi = this.nameAiValue;
     return calculatedGraph.toFixed(8);
   }
 
