@@ -396,7 +396,7 @@ export class GraphComponent implements OnInit, OnDestroy {
       throw new Error('Invalid graph json structure.');
     }
 
-    this.showAiBox = calculatedGraph.useAi === undefined;
+    this.showAiBox = calculatedGraph.useAi !== true;
     this.useAiValue = calculatedGraph.useAi;
     this.nameAiValue = calculatedGraph.nameAi ?? null;
 
